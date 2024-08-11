@@ -20,7 +20,7 @@ graph.py
 *.dot
 *.contigs
 *.graph
-*.txt
+#*.txt
 *.out
 *.swp
 *.bf
@@ -40,3 +40,4 @@ data/
 core
 man/
 example/output/
+/.vs
