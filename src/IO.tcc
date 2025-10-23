@@ -2,64 +2,64 @@
 #define BIFROST_IO_CDBG_TCC
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads, const bool GFA_output, const bool FASTA_output, const bool BFG_output, const bool write_index_file, const bool compressed_output, const bool verbose) const {
+bool CompactedDBG<U, G>::write(const std::string& output_fn, const size_t nb_threads, const bool GFA_output, const bool FASTA_output, const bool BFG_output, const bool write_index_file, const bool compressed_output, const bool verbose) const {
 
     if (invalid){
 
-        cerr << "CompactedDBG::write(): Graph is invalid and cannot be written to disk" << endl;
+        std::cerr << "CompactedDBG::write(): Graph is invalid and cannot be written to disk" << std::endl;
         return false;
     }
 
     if (nb_threads <= 0){
 
-        cerr << "CompactedDBG::write(): Number of threads cannot be less than 0" << endl;
+        std::cerr << "CompactedDBG::write(): Number of threads cannot be less than 0" << std::endl;
         return false;
     }
 
     if (nb_threads > std::thread::hardware_concurrency()){
 
-        cerr << "CompactedDBG::write(): Number of threads cannot exceed " << std::thread::hardware_concurrency() << "threads" << endl;
+        std::cerr << "CompactedDBG::write(): Number of threads cannot exceed " << std::thread::hardware_concurrency() << "threads" << std::endl;
         return false;
     }
 
     if (!GFA_output && !FASTA_output && !BFG_output){
 
-        cerr << "CompactedDBG::write(): No type of format output selected" << endl;
+        std::cerr << "CompactedDBG::write(): No type of format output selected" << std::endl;
         return false;
     }
 
     if (static_cast<int>(GFA_output) + static_cast<int>(FASTA_output) + static_cast<int>(BFG_output) > 1){
 
-        cerr << "CompactedDBG::write(): Multiple output formats selected. Please choose one." << endl;
+        std::cerr << "CompactedDBG::write(): Multiple output formats selected. Please choose one." << std::endl;
         return false;
     }
 
     bool write_success = true;
 
     {
-        if (verbose) cout << endl << "CompactedDBG::write(): Writing graph to disk" << endl;
+        if (verbose) std::cout << std::endl << "CompactedDBG::write(): Writing graph to disk" << std::endl;
 
-        string fn = output_fn;
+        std::string fn = output_fn;
 
         // Add file extensions if missing
 	    if (GFA_output || FASTA_output) {
 
-	        const string g_ext = (GFA_output ? ".gfa" : ".fasta");
-	        const string c_ext = ".gz";
-	        const string gc_ext = g_ext + c_ext;
+	        const std::string g_ext = (GFA_output ? ".gfa" : ".fasta");
+	        const std::string c_ext = ".gz";
+	        const std::string gc_ext = g_ext + c_ext;
 
 	        const size_t pos_ext = fn.find_last_of(".");
 
-	        if (pos_ext == string::npos) fn.append(compressed_output ? gc_ext : g_ext);
+	        if (pos_ext == std::string::npos) fn.append(compressed_output ? gc_ext : g_ext);
 	        else if (!compressed_output && (fn.substr(pos_ext) != g_ext)) fn.append(g_ext);
 	        else if (compressed_output && (fn.substr(pos_ext) != c_ext)) fn.append(gc_ext);
 	    }
 	    else if (BFG_output) {
 
-	    	const string g_ext = ".bfg";
+	    	const std::string g_ext = ".bfg";
 	    	const size_t pos_ext = fn.find_last_of(".");
 
-	    	if ((pos_ext == string::npos) || (fn.substr(pos_ext) != g_ext)) fn.append(g_ext);
+	    	if ((pos_ext == std::string::npos) || (fn.substr(pos_ext) != g_ext)) fn.append(g_ext);
 
 
 	    }
@@ -68,7 +68,7 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 
         if (fp == NULL) {
 
-            cerr << "CompactedDBG::write(): Could not open file " << fn << " for writing graph" << endl;
+            std::cerr << "CompactedDBG::write(): Could not open file " << fn << " for writing graph" << std::endl;
 
             return false;
         }
@@ -76,7 +76,7 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 
             fclose(fp);
 
-            if (std::remove(fn.c_str()) != 0) cerr << "CompactedDBG::write(): Could not remove temporary file " << fn << endl;
+            if (std::remove(fn.c_str()) != 0) std::cerr << "CompactedDBG::write(): Could not remove temporary file " << fn << std::endl;
         }
 
         if (GFA_output) write_success = writeGFA(fn, nb_threads, compressed_output);
@@ -86,13 +86,13 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 
     if (write_success && (write_index_file || BFG_output)) {
 
-        if (verbose) cout << endl << "CompactedDBG::write(): Writing index file to disk" << endl;
+        if (verbose) std::cout << std::endl << "CompactedDBG::write(): Writing index file to disk" << std::endl;
 
-        string fn = output_fn;
+        std::string fn = output_fn;
 
         // Add file extensions if missing
 	    {
-	    	const string ext = ".bfi";
+	    	const std::string ext = ".bfi";
 
 	        if ((fn.length() < ext.length()) || (fn.substr(fn.length() - ext.length()) != ext)) fn.append(ext);
 	    }
@@ -101,7 +101,7 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 
         if (fp == NULL) {
 
-            cerr << "CompactedDBG::write(): Could not open file " << fn << " for writing index file" << endl;
+            std::cerr << "CompactedDBG::write(): Could not open file " << fn << " for writing index file" << std::endl;
             
             return false;
         }
@@ -109,7 +109,7 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 
             fclose(fp);
 
-            if (std::remove(fn.c_str()) != 0) cerr << "CompactedDBG::write(): Could not remove temporary file " << fn << endl;
+            if (std::remove(fn.c_str()) != 0) std::cerr << "CompactedDBG::write(): Could not remove temporary file " << fn << std::endl;
         }
 
         const uint64_t graph_checksum = checksum();
@@ -121,48 +121,48 @@ bool CompactedDBG<U, G>::write(const string& output_fn, const size_t nb_threads,
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_threads, const bool verbose){
+bool CompactedDBG<U, G>::read(const std::string& input_graph_fn, const size_t nb_threads, const bool verbose){
 
-    if (verbose) cout << endl << "CompactedDBG::read(): Reading graph from disk" << endl;
+    if (verbose) std::cout << std::endl << "CompactedDBG::read(): Reading graph from disk" << std::endl;
 
     const int format = FileParser::getFileFormat(input_graph_fn.c_str());
 
     if (format == -1){
 
-        cerr << "CompactedDBG::read(): Input graph file " << input_graph_fn << " does not exist, is ill-formed or is not a valid graph file format." << endl;
+        std::cerr << "CompactedDBG::read(): Input graph file " << input_graph_fn << " does not exist, is ill-formed or is not a valid graph file format." << std::endl;
 
         return false;
     }
     else if ((format != 0) && (format != 2) && (format != 3)){
 
-        cerr << "CompactedDBG::read(): Input graph file must be in FASTA, GFA or BFG format." << endl;
+        std::cerr << "CompactedDBG::read(): Input graph file must be in FASTA, GFA or BFG format." << std::endl;
 
         return false;
     }
 
-    string input_index_fn = input_graph_fn;
+    std::string input_index_fn = input_graph_fn;
 
     // Try to open index file if available
     {
         size_t pos_ext = input_index_fn.find_last_of(".");
 
-        string ext; 
+        std::string ext; 
 
-        if ((pos_ext != string::npos) && (input_index_fn.substr(pos_ext) == ".gz")) {
+        if ((pos_ext != std::string::npos) && (input_index_fn.substr(pos_ext) == ".gz")) {
 
         	input_index_fn = input_index_fn.substr(0, pos_ext);
 			pos_ext = input_index_fn.find_last_of(".");
         }
 
-        if (pos_ext != string::npos) ext = input_index_fn.substr(pos_ext);
-        if ((pos_ext != string::npos) && ((ext == ".gfa")) || (ext == ".fasta") || (ext == ".bfg")) input_index_fn = input_index_fn.substr(0, pos_ext);
+        if (pos_ext != std::string::npos) ext = input_index_fn.substr(pos_ext);
+        if ((pos_ext != std::string::npos) && ((ext == ".gfa")) || (ext == ".fasta") || (ext == ".bfg")) input_index_fn = input_index_fn.substr(0, pos_ext);
 
         input_index_fn += ".bfi"; // Add Bifrost graph index extension 
     }
 
     if ((input_graph_fn != input_index_fn) && check_file_exists(input_index_fn)) {
 
-    	if (verbose) cout << "CompactedDBG::read(): Reading using Bifrost index file " << input_index_fn << "." << endl;
+    	if (verbose) std::cout << "CompactedDBG::read(): Reading using Bifrost index file " << input_index_fn << "." << std::endl;
 
     	return read(input_graph_fn, input_index_fn, nb_threads, verbose);
     }
@@ -188,7 +188,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 
 	            KmerStream kms(kms_opt);
 
-	            MinimizerIndex hmap_min_unitigs_tmp(max(1UL, kms.MinimizerF0()) * 1.05);
+	            MinimizerIndex hmap_min_unitigs_tmp(std::max(1UL, kms.MinimizerF0()) * 1.05);
 
 	            hmap_min_unitigs = std::move(hmap_min_unitigs_tmp);
 	        }
@@ -198,7 +198,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 	    }
 	    else if (format == 2){ // GFA format
 
-	    	string header;
+	    	std::string header;
 
 		    int k = k_, g = g_;
 
@@ -207,7 +207,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 
 		        if (fp == NULL) {
 
-		            cerr << "CompactedDBG::read(): Could not open file " << input_graph_fn << " for reading graph" << endl;
+		            std::cerr << "CompactedDBG::read(): Could not open file " << input_graph_fn << " for reading graph" << std::endl;
 		            return false;
 		        }
 
@@ -225,18 +225,18 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 	    	{
 		        if (header[0] != 'H'){
 
-		            cerr << "CompactedDBG::read(): An error occurred while reading input GFA file." << endl;
+		            std::cerr << "CompactedDBG::read(): An error occurred while reading input GFA file." << std::endl;
 		            return false;
 		        }
 
-		        stringstream hs(header.c_str() + 2); // Skip the first 2 char. of the line "H\t"
-		        string sub;
+		        std::stringstream hs(header.c_str() + 2); // Skip the first 2 char. of the line "H\t"
+		        std::string sub;
 
 		        while (hs.good()){ // Split line based on tabulation
 
-		            getline(hs, sub, '\t');
+		            std::getline(hs, sub, '\t');
 
-		            const string tag = sub.substr(0, 5);
+		            const std::string tag = sub.substr(0, 5);
 
 		            if (tag == "KL:Z:") k = atoi(sub.c_str() + 5);
 		            else if (tag == "ML:Z:") g = atoi(sub.c_str() + 5);
@@ -258,7 +258,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 
 	            KmerStream kms(kms_opt);
 
-	            MinimizerIndex hmap_min_unitigs_tmp(max(1UL, kms.MinimizerF0()) * 1.05);
+	            MinimizerIndex hmap_min_unitigs_tmp(std::max(1UL, kms.MinimizerF0()) * 1.05);
 	            hmap_min_unitigs = std::move(hmap_min_unitigs_tmp);
 	        }
 
@@ -267,7 +267,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 	    }
 	    else { // BFG format
 
-	    	cerr << "CompactedDBG::read(): No index found for Bifrost graph file " << input_graph_fn << endl;
+	    	std::cerr << "CompactedDBG::read(): No index found for Bifrost graph file " << input_graph_fn << std::endl;
 
 	    	invalid = true;
 	    }
@@ -277,41 +277,41 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const size_t nb_thre
 	    // Set coverages
 	    if (!invalid) for (auto& unitig : *this) unitig.setFullCoverage();
 
-	    if (verbose) cout << endl << "CompactedDBG::read(): Finished reading graph from disk" << endl;
+	    if (verbose) std::cout << std::endl << "CompactedDBG::read(): Finished reading graph from disk" << std::endl;
 
     	return !invalid;
 	}
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::read(const string& input_graph_fn, const string& input_index_fn, const size_t nb_threads, const bool verbose){
+bool CompactedDBG<U, G>::read(const std::string& input_graph_fn, const std::string& input_index_fn, const size_t nb_threads, const bool verbose){
 
-    if (verbose) cout << endl << "CompactedDBG::read(): Reading graph from disk" << endl;
+    if (verbose) std::cout << std::endl << "CompactedDBG::read(): Reading graph from disk" << std::endl;
 
     const int format_graph = FileParser::getFileFormat(input_graph_fn.c_str());
     const int format_index = FileParser::getFileFormat(input_index_fn.c_str());
 
     if (format_graph == -1){
 
-        cerr << "CompactedDBG::read(): Input graph file " << input_graph_fn << " does not exist, is ill-formed or is not a valid graph file format." << endl;
+        std::cerr << "CompactedDBG::read(): Input graph file " << input_graph_fn << " does not exist, is ill-formed or is not a valid graph file format." << std::endl;
 
         return false;
     }
     else if ((format_graph != 0) && (format_graph != 2) && (format_graph != 3)){
 
-        cerr << "CompactedDBG::read(): Input graph file must be in FASTA, GFA or BFG format." << endl;
+        std::cerr << "CompactedDBG::read(): Input graph file must be in FASTA, GFA or BFG format." << std::endl;
 
         return false;
     }
 
     if (format_index != 4) {
 
-        cerr << "CompactedDBG::read(): Input index file " << input_index_fn << " does not exist, is ill-formed or is not a valid index file format." << endl;
+        std::cerr << "CompactedDBG::read(): Input index file " << input_index_fn << " does not exist, is ill-formed or is not a valid index file format." << std::endl;
 
         return false;
     }
 
-    pair<uint64_t, bool> p_readSuccess_checksum;
+    std::pair<uint64_t, bool> p_readSuccess_checksum;
 
     if (format_graph == 0) { // FASTA input
 
@@ -326,7 +326,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const string& input_
     }
     else if (format_graph == 2){ // GFA format
 
-    	string header;
+    	std::string header;
 
 	    int k = k_, g = g_;
 
@@ -335,7 +335,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const string& input_
 
 	        if (fp == NULL) {
 
-	            cerr << "CompactedDBG::read(): Could not open file " << input_graph_fn << " for reading graph" << endl;
+	            std::cerr << "CompactedDBG::read(): Could not open file " << input_graph_fn << " for reading graph" << std::endl;
 	            return false;
 	        }
 
@@ -353,18 +353,18 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const string& input_
     	{
 	        if (header[0] != 'H'){
 
-	            cerr << "CompactedDBG::read(): An error occurred while reading input GFA file." << endl;
+	            std::cerr << "CompactedDBG::read(): An error occurred while reading input GFA file." << std::endl;
 	            return false;
 	        }
 
-	        stringstream hs(header.c_str() + 2); // Skip the first 2 char. of the line "H\t"
-	        string sub;
+	        std::stringstream hs(header.c_str() + 2); // Skip the first 2 char. of the line "H\t"
+	        std::string sub;
 
 	        while (hs.good()){ // Split line based on tabulation
 
-	            getline(hs, sub, '\t');
+	            std::getline(hs, sub, '\t');
 
-	            const string tag = sub.substr(0, 5);
+	            const std::string tag = sub.substr(0, 5);
 
 	            if (tag == "KL:Z:") k = atoi(sub.c_str() + 5);
 	            else if (tag == "ML:Z:") g = atoi(sub.c_str() + 5);
@@ -392,7 +392,7 @@ bool CompactedDBG<U, G>::read(const string& input_graph_fn, const string& input_
     	invalid = !readBinaryIndex(input_index_fn, p_readSuccess_checksum.first);
     }
 
-    if (verbose) cout << endl << "CompactedDBG::read(): Finished reading graph from disk" << endl;
+    if (verbose) std::cout << std::endl << "CompactedDBG::read(): Finished reading graph from disk" << std::endl;
 
     return !invalid;
 }
@@ -405,7 +405,7 @@ typename std::enable_if<!is_void, void>::type CompactedDBG<U, G>::writeGFA_seque
 
     for (const auto& unitig : *this){
 
-        const string seq(unitig.referenceUnitigToString());
+        const std::string seq(unitig.referenceUnitigToString());
 
         graph.write_sequence(std::to_string(labelA), seq.size(), seq, unitig.getData()->serialize(unitig));
 
@@ -423,7 +423,7 @@ typename std::enable_if<is_void, void>::type CompactedDBG<U, G>::writeGFA_sequen
 
     for (const auto& unitig : *this){
 
-        const string seq(unitig.referenceUnitigToString());
+        const std::string seq(unitig.referenceUnitigToString());
 
         graph.write_sequence(std::to_string(labelA), seq.size(), seq, "");
 
@@ -440,14 +440,14 @@ typename std::enable_if<is_void, void>::type CompactedDBG<U, G>::writeGFA_sequen
 // The binary graph file is written in that order
 // and the checksum is stored in the index file is computed for that order
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, const bool compressed_output) const {
+bool CompactedDBG<U, G>::writeGFA(const std::string& fn, const size_t nb_threads, const bool compressed_output) const {
 
     const size_t v_unitigs_sz = v_unitigs.size();
     const size_t v_kmers_sz = km_unitigs.size();
 
     size_t labelA, labelB, id = v_unitigs_sz + v_kmers_sz + 1;
 
-    const string header_tag("BV:Z:" + string(BFG_VERSION) + "\t" + "KL:Z:" + to_string(k_) + "\t" + "ML:Z:" + to_string(g_));
+    const std::string header_tag("BV:Z:" + std::string(BFG_VERSION) + "\t" + "KL:Z:" + std::to_string(k_) + "\t" + "ML:Z:" + std::to_string(g_));
 
     KmerHashTable<size_t> idmap(h_kmers_ccov.size());
 
@@ -455,7 +455,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
 
     graph.open_write(1, header_tag, compressed_output);
 
-    writeGFA_sequence_<is_void<U>::value>(graph, idmap);
+    writeGFA_sequence_<std::is_void<U>::value>(graph, idmap);
 
     if (nb_threads == 1){
 
@@ -465,8 +465,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
             const Kmer head = unitig->getSeq().getKmer(0);
             const Kmer tail = unitig->getSeq().getKmer(unitig->length() - k_);
 
-            const vector<const_UnitigMap<U, G>> pred = findPredecessors(head, true);
-            const vector<const_UnitigMap<U, G>> succ = findSuccessors(tail, 4, true);
+            const std::vector<const_UnitigMap<U, G>> pred = findPredecessors(head, true);
+            const std::vector<const_UnitigMap<U, G>> succ = findSuccessors(tail, 4, true);
 
             for (const auto& unitig : pred){
 
@@ -475,8 +475,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -491,8 +491,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -505,8 +505,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
 
             const Kmer km_unitig = km_unitigs.getKmer(labelA - v_unitigs_sz - 1);
 
-            const vector<const_UnitigMap<U, G>> pred = findPredecessors(km_unitig, true);
-            const vector<const_UnitigMap<U, G>> succ = findSuccessors(km_unitig, 4, true);
+            const std::vector<const_UnitigMap<U, G>> pred = findPredecessors(km_unitig, true);
+            const std::vector<const_UnitigMap<U, G>> succ = findSuccessors(km_unitig, 4, true);
 
             for (const auto& unitig : pred){
 
@@ -515,8 +515,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -531,8 +531,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -545,8 +545,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
 
             labelA = *it;
 
-            const vector<const_UnitigMap<U, G>> pred = findPredecessors(it.getKey(), true);
-            const vector<const_UnitigMap<U, G>> succ = findSuccessors(it.getKey(), 4, true);
+            const std::vector<const_UnitigMap<U, G>> pred = findPredecessors(it.getKey(), true);
+            const std::vector<const_UnitigMap<U, G>> succ = findSuccessors(it.getKey(), 4, true);
 
             for (const auto& unitig : pred){
 
@@ -555,8 +555,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -571,8 +571,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                     if (unitig.isAbundant) labelB = *(idmap.find(unitig.getUnitigHead().rep()));
                     else labelB = unitig.pos_unitig + 1 + ((static_cast<size_t>(!unitig.isShort) - 1) & v_unitigs_sz);
 
-                    const string slabelA = std::to_string(labelA);
-                    const string slabelB = std::to_string(labelB);
+                    const std::string slabelA = std::to_string(labelA);
+                    const std::string slabelB = std::to_string(labelB);
 
                     const size_t pos = (static_cast<size_t>(unitig.strand) - 1) & (unitig.size - k_ + 1);
 
@@ -586,7 +586,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
         const size_t chunk_size = 1024;
 
         auto worker_v_unitigs = [v_unitigs_sz, &idmap, this](const size_t labelA_start, const size_t labelA_end,
-                                                             vector<pair<pair<size_t, bool>, pair<size_t, bool>>>* v_out){
+                                                             std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>* v_out){
 
             // We need to deal with the tail of long unitigs
             for (size_t labelA = labelA_start; labelA < labelA_end; ++labelA) {
@@ -596,8 +596,8 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                 const Kmer head = unitig->getSeq().getKmer(0);
                 const Kmer tail = unitig->getSeq().getKmer(unitig->length() - k_);
 
-                const vector<const_UnitigMap<U, G>> pred = this->findPredecessors(head, true);
-                const vector<const_UnitigMap<U, G>> succ = this->findSuccessors(tail, 4, true);
+                const std::vector<const_UnitigMap<U, G>> pred = this->findPredecessors(head, true);
+                const std::vector<const_UnitigMap<U, G>> succ = this->findSuccessors(tail, 4, true);
 
                 for (const auto& um : pred) {
 
@@ -606,7 +606,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(labelA, false), make_pair(labelB, !um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(labelA, false), std::make_pair(labelB, !um.strand)));
                     }
                 }
 
@@ -617,22 +617,22 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(labelA, true), make_pair(labelB, um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(labelA, true), std::make_pair(labelB, um.strand)));
                     }
                 }
             }
         };
 
         auto worker_v_kmers = [v_unitigs_sz, &idmap, this](const size_t labelA_start, const size_t labelA_end,
-                                                             vector<pair<pair<size_t, bool>, pair<size_t, bool>>>* v_out){
+                                                             std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>* v_out){
 
             // We need to deal with the tail of long unitigs
             for (size_t labelA = labelA_start; labelA < labelA_end; ++labelA) {
 
                 const Kmer km_unitig = km_unitigs.getKmer(labelA - v_unitigs_sz - 1);
 
-                const vector<const_UnitigMap<U, G>> pred = this->findPredecessors(km_unitig, true);
-                const vector<const_UnitigMap<U, G>> succ = this->findSuccessors(km_unitig, 4, true);
+                const std::vector<const_UnitigMap<U, G>> pred = this->findPredecessors(km_unitig, true);
+                const std::vector<const_UnitigMap<U, G>> succ = this->findSuccessors(km_unitig, 4, true);
 
                 for (const auto& um : pred) {
 
@@ -641,7 +641,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(labelA, false), make_pair(labelB, !um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(labelA, false), std::make_pair(labelB, !um.strand)));
                     }
                 }
 
@@ -652,22 +652,22 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(labelA, true), make_pair(labelB, um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(labelA, true), std::make_pair(labelB, um.strand)));
                     }
                 }
             }
         };
 
         auto worker_v_abundant = [v_unitigs_sz, chunk_size, &idmap, this](  KmerHashTable<size_t>::iterator* l_it,
-                                                                            vector<pair<pair<size_t, bool>, pair<size_t, bool>>>* v_out){
+                                                                            std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>* v_out){
 
             KmerHashTable<size_t>::iterator& it = *l_it;
 
             // We need to deal with the tail of long unitigs
             for (size_t i = 0; (it != idmap.end()) && (i < chunk_size); ++i, ++it) {
 
-                const vector<const_UnitigMap<U, G>> pred = this->findPredecessors(it.getKey(), true);
-                const vector<const_UnitigMap<U, G>> succ = this->findSuccessors(it.getKey(), 4, true);
+                const std::vector<const_UnitigMap<U, G>> pred = this->findPredecessors(it.getKey(), true);
+                const std::vector<const_UnitigMap<U, G>> succ = this->findSuccessors(it.getKey(), 4, true);
 
                 for (const auto& um : pred) {
 
@@ -676,7 +676,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(*it, false), make_pair(labelB, !um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(*it, false), std::make_pair(labelB, !um.strand)));
                     }
                 }
 
@@ -687,19 +687,19 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         const size_t labelB = (um.isAbundant ?  *(idmap.find(um.getUnitigHead().rep())) :
                                                                 um.pos_unitig + 1 + ((static_cast<size_t>(!um.isShort) - 1) & v_unitigs_sz));
 
-                        v_out->push_back(make_pair(make_pair(*it, true), make_pair(labelB, um.strand)));
+                        v_out->push_back(std::make_pair(std::make_pair(*it, true), std::make_pair(labelB, um.strand)));
                     }
                 }
             }
         };
 
         {
-            atomic<size_t> label(1);
+            std::atomic<size_t> label(1);
 
-            vector<vector<pair<pair<size_t, bool>, pair<size_t, bool>>>> v_out(nb_threads);
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>> v_out(nb_threads);
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-            mutex mutex_file;
+            std::mutex mutex_file;
 
             for (size_t t = 0; t < nb_threads; ++t){
 
@@ -717,12 +717,12 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                                 else worker_v_unitigs(old_labelA, v_unitigs_sz + 1, &v_out[t]);
 
                                 {
-                                    unique_lock<mutex> lock(mutex_file);
+                                    std::unique_lock<std::mutex> lock(mutex_file);
 
                                     for (const auto& p : v_out[t]){
 
-                                        const string slabelA = std::to_string(p.first.first);
-                                        const string slabelB = std::to_string(p.second.first);
+                                        const std::string slabelA = std::to_string(p.first.first);
+                                        const std::string slabelB = std::to_string(p.second.first);
 
                                         graph.write_edge(slabelA, 0, k_-1, p.first.second, slabelB, 0, k_-1, p.second.second);
                                     }
@@ -742,12 +742,12 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
         {
             const size_t v_kmers_unitigs_sz = v_kmers_sz + v_unitigs_sz;
 
-            atomic<size_t> label(v_unitigs_sz + 1);
+            std::atomic<size_t> label(v_unitigs_sz + 1);
 
-            vector<vector<pair<pair<size_t, bool>, pair<size_t, bool>>>> v_out(nb_threads);
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>> v_out(nb_threads);
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-            mutex mutex_file;
+            std::mutex mutex_file;
 
             for (size_t t = 0; t < nb_threads; ++t){
 
@@ -765,12 +765,12 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                                 else worker_v_kmers(old_labelA, v_kmers_unitigs_sz + 1, &v_out[t]);
 
                                 {
-                                    unique_lock<mutex> lock(mutex_file);
+                                    std::unique_lock<std::mutex> lock(mutex_file);
 
                                     for (const auto& p : v_out[t]){
 
-                                        const string slabelA = std::to_string(p.first.first);
-                                        const string slabelB = std::to_string(p.second.first);
+                                        const std::string slabelA = std::to_string(p.first.first);
+                                        const std::string slabelB = std::to_string(p.second.first);
 
                                         graph.write_edge(slabelA, 0, k_-1, p.first.second, slabelB, 0, k_-1, p.second.second);
                                     }
@@ -790,10 +790,10 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
         {
             KmerHashTable<size_t>::iterator it = idmap.begin(), it_end = idmap.end();
 
-            vector<vector<pair<pair<size_t, bool>, pair<size_t, bool>>>> v_out(nb_threads);
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::vector<std::pair<std::pair<size_t, bool>, std::pair<size_t, bool>>>> v_out(nb_threads);
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-            mutex mutex_file, mutex_it;
+            std::mutex mutex_file, mutex_it;
 
             for (size_t t = 0; t < nb_threads; ++t){
 
@@ -808,7 +808,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                         while (true) {
 
                             {
-                                unique_lock<mutex> lock(mutex_it);
+                                std::unique_lock<std::mutex> lock(mutex_it);
 
                                 l_it = it;
 
@@ -822,12 +822,12 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
                                 worker_v_abundant(&l_it, &v_out[t]);
 
                                 {
-                                    unique_lock<mutex> lock(mutex_file);
+                                    std::unique_lock<std::mutex> lock(mutex_file);
 
                                     for (const auto& p : v_out[t]){
 
-                                        const string slabelA = std::to_string(p.first.first);
-                                        const string slabelB = std::to_string(p.second.first);
+                                        const std::string slabelA = std::to_string(p.first.first);
+                                        const std::string slabelB = std::to_string(p.second.first);
 
                                         graph.write_edge(slabelA, 0, k_-1, p.first.second, slabelB, 0, k_-1, p.second.second);
                                     }
@@ -857,7 +857,7 @@ bool CompactedDBG<U, G>::writeGFA(const string& fn, const size_t nb_threads, con
 // The binary graph file is written in that order
 // and the checksum is stored in the index file is computed for that order
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeFASTA(const string& fn, const bool compressed_output) const {
+bool CompactedDBG<U, G>::writeFASTA(const std::string& fn, const bool compressed_output) const {
 
     const size_t v_unitigs_sz = v_unitigs.size();
     const size_t v_kmers_sz = km_unitigs.size();
@@ -868,7 +868,7 @@ bool CompactedDBG<U, G>::writeFASTA(const string& fn, const bool compressed_outp
 
     if (compressed_output) {
 
-    	zstr::ofstream gout(fn, ios_base::out);
+    	zstr::ofstream gout(fn, std::ios_base::out);
 
 	    for (size_t j = 0; !gout.fail() && (j < v_unitigs_sz); ++j, ++i) gout << ">" << i << "\n" << v_unitigs[j]->getSeq().toString() << "\n";
 	    for (size_t j = 0; !gout.fail() && (j < v_kmers_sz); ++j, ++i) gout << ">" << i << "\n" << km_unitigs.getKmer(j).toString() << "\n";
@@ -882,8 +882,8 @@ bool CompactedDBG<U, G>::writeFASTA(const string& fn, const bool compressed_outp
     }
     else {
 
-	    ofstream graphfile;
-	    ostream graph(0);
+	    std::ofstream graphfile;
+	    std::ostream graph(0);
 
 	    graphfile.open(fn.c_str());
 	    graph.rdbuf(graphfile.rdbuf());
@@ -905,12 +905,12 @@ bool CompactedDBG<U, G>::writeFASTA(const string& fn, const bool compressed_outp
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinary(const string& fn) {
+bool CompactedDBG<U, G>::readBinary(const std::string& fn) {
 
     if ((fn.length() == 0) || !check_file_exists(fn)) return false;
 
-    ifstream infile;
-    istream in(0);
+    std::ifstream infile;
+    std::istream in(0);
 
     infile.open(fn.c_str());
     in.rdbuf(infile.rdbuf());
@@ -919,11 +919,11 @@ bool CompactedDBG<U, G>::readBinary(const string& fn) {
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinary(istream& in) {
+bool CompactedDBG<U, G>::readBinary(std::istream& in) {
 
     if (!in.fail()) {
 
-    	const pair<uint64_t, bool> p_readSuccess_checksum = readBinaryGraph(in);
+    	const std::pair<uint64_t, bool> p_readSuccess_checksum = readBinaryGraph(in);
 
     	if (p_readSuccess_checksum.second) return readBinaryIndex(in, p_readSuccess_checksum.first);
     }
@@ -932,12 +932,12 @@ bool CompactedDBG<U, G>::readBinary(istream& in) {
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinaryIndex(const string& fn, const uint64_t checksum) {
+bool CompactedDBG<U, G>::readBinaryIndex(const std::string& fn, const uint64_t checksum) {
 
     if ((fn.length() == 0) || !check_file_exists(fn)) return false;
 
-    ifstream infile;
-    istream in(0);
+    std::ifstream infile;
+    std::istream in(0);
 
     infile.open(fn.c_str());
     in.rdbuf(infile.rdbuf());
@@ -946,13 +946,13 @@ bool CompactedDBG<U, G>::readBinaryIndex(const string& fn, const uint64_t checks
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinaryIndexHead(const string& fn, size_t& file_format_version, size_t& v_unitigs_sz, size_t& km_unitigs_sz,
+bool CompactedDBG<U, G>::readBinaryIndexHead(const std::string& fn, size_t& file_format_version, size_t& v_unitigs_sz, size_t& km_unitigs_sz,
 											size_t& h_kmers_ccov_sz, size_t& hmap_min_unitigs_sz, uint64_t& read_checksum) const {
 
     if ((fn.length() == 0) || !check_file_exists(fn)) return false;
 
-    ifstream infile;
-    istream in(0);
+    std::ifstream infile;
+    std::istream in(0);
 
     infile.open(fn.c_str());
     in.rdbuf(infile.rdbuf());
@@ -961,7 +961,7 @@ bool CompactedDBG<U, G>::readBinaryIndexHead(const string& fn, size_t& file_form
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinaryIndexHead(istream& in, size_t& file_format_version, size_t& v_unitigs_sz, size_t& km_unitigs_sz,
+bool CompactedDBG<U, G>::readBinaryIndexHead(std::istream& in, size_t& file_format_version, size_t& v_unitigs_sz, size_t& km_unitigs_sz,
 											size_t& h_kmers_ccov_sz, size_t& hmap_min_unitigs_sz, uint64_t& read_checksum) const {
 
 	if (in.fail()) return false;
@@ -978,7 +978,7 @@ bool CompactedDBG<U, G>::readBinaryIndexHead(istream& in, size_t& file_format_ve
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
+bool CompactedDBG<U, G>::readBinaryIndex(std::istream& in, const uint64_t checksum) {
 
     bool read_success = !in.fail();
 
@@ -995,22 +995,22 @@ bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
 
         if (!read_success || (file_format_header != BFG_METABIN_FORMAT_HEADER)) {
 
-            cerr << "CompactedDBG::readBinaryIndex(): Unrecognized Bifrost index file header." << endl;
+            std::cerr << "CompactedDBG::readBinaryIndex(): Unrecognized Bifrost index file header." << std::endl;
 
             return false; // Is not an index file
         }
 
         if (!read_success || (file_format_version!= BFG_METABIN_FORMAT_VERSION)) {
 
-            cerr << "CompactedDBG::readBinaryIndex(): Current Bifrost version (" << BFG_VERSION << ") can only read index files in version v" <<
-            BFG_METABIN_FORMAT_VERSION << " but provided input index file is in version v" << file_format_version << "." << endl;
+            std::cerr << "CompactedDBG::readBinaryIndex(): Current Bifrost version (" << BFG_VERSION << ") can only read index files in version v" <<
+            BFG_METABIN_FORMAT_VERSION << " but provided input index file is in version v" << file_format_version << "." << std::endl;
 
             return false; // Is not a compatible index file version
         }
 
         if (!read_success || (read_checksum != checksum)) {
 
-            cerr << "CompactedDBG::readBinaryIndex(): Graph checksum does not match, input file(s) might be corrupted" << endl;
+            std::cerr << "CompactedDBG::readBinaryIndex(): Graph checksum does not match, input file(s) might be corrupted" << std::endl;
 
             return false;
         }
@@ -1024,7 +1024,7 @@ bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
 
         in.read(reinterpret_cast<char*>(&nb_bmp_unitigs), sizeof(size_t));
 
-        vector<BitContainer> v_bmp_unitigs(nb_bmp_unitigs);
+        std::vector<BitContainer> v_bmp_unitigs(nb_bmp_unitigs);
 
         for (size_t i = 0; read_success && (i < nb_bmp_unitigs); ++i) read_success = v_bmp_unitigs[i].read(in);
 
@@ -1072,7 +1072,7 @@ bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
 
         in.read(reinterpret_cast<char*>(&nb_bmp_km), sizeof(size_t));
 
-        vector<BitContainer> v_bmp_km(nb_bmp_km);
+        std::vector<BitContainer> v_bmp_km(nb_bmp_km);
 
         for (size_t i = 0; (i < nb_bmp_km) && read_success; ++i) read_success = v_bmp_km[i].read(in);
 
@@ -1118,8 +1118,8 @@ bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
 
         if (read_success) {
 
-            vector<BitContainer> v_bmp_abundant((nb_special_minz >> 32) + 1);
-            vector<BitContainer> v_bmp_overcrowded((nb_special_minz >> 32) + 1);
+            std::vector<BitContainer> v_bmp_abundant((nb_special_minz >> 32) + 1);
+            std::vector<BitContainer> v_bmp_overcrowded((nb_special_minz >> 32) + 1);
 
             for (size_t i = 0; (i < v_bmp_abundant.size()) && read_success; ++i) read_success = v_bmp_abundant[i].read(in);
             for (size_t i = 0; (i < v_bmp_overcrowded.size()) && read_success; ++i) read_success = v_bmp_overcrowded[i].read(in);
@@ -1185,12 +1185,12 @@ bool CompactedDBG<U, G>::readBinaryIndex(istream& in, const uint64_t checksum) {
 }
 
 template<typename U, typename G>
-pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(const string& fn) {
+std::pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(const std::string& fn) {
 
     if ((fn.length() == 0) || !check_file_exists(fn)) return {0, false};
 
-    ifstream infile;
-    istream in(0);
+    std::ifstream infile;
+    std::istream in(0);
 
     infile.open(fn.c_str());
     in.rdbuf(infile.rdbuf());
@@ -1199,7 +1199,7 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(const string& fn) {
 }
 
 template<typename U, typename G>
-pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(istream& in) {
+std::pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(std::istream& in) {
 
     bool read_success = !in.fail();
 
@@ -1232,15 +1232,15 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(istream& in) {
 
         if (file_format_header != BFG_GRAPHBIN_FORMAT_HEADER) {
 
-            cerr << "CompactedDBG::readBinaryGraph(): Unrecognized Bifrost binary graph file header." << endl;
+            std::cerr << "CompactedDBG::readBinaryGraph(): Unrecognized Bifrost binary graph file header." << std::endl;
 
             return {graph_checksum, false};
         }
 
         if (file_format_version != BFG_GRAPHBIN_FORMAT_VERSION) {
 
-            cerr << "CompactedDBG::readBinaryGraph(): Current Bifrost version (" << BFG_VERSION << ") can only read binary graph files in version v" <<
-            BFG_GRAPHBIN_FORMAT_VERSION << " but provided input binary graph file is in version v" << file_format_version << "." << endl;
+            std::cerr << "CompactedDBG::readBinaryGraph(): Current Bifrost version (" << BFG_VERSION << ") can only read binary graph files in version v" <<
+            BFG_GRAPHBIN_FORMAT_VERSION << " but provided input binary graph file is in version v" << file_format_version << "." << std::endl;
 
             return {graph_checksum, false};
         }
@@ -1271,7 +1271,7 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(istream& in) {
                 read_success = cs.read(in);
                 graph_checksum = cs.hash(graph_checksum);
                 cc = CompressedCoverage(cs.size() - k_ + 1, false);
-                unitig = new Unitig<U>(move(cs), move(cc));
+                unitig = new Unitig<U>(std::move(cs), std::move(cc));
 
                 v_unitigs.push_back(unitig);
             }
@@ -1322,12 +1322,12 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readBinaryGraph(istream& in) {
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinary(const string& fn, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinary(const std::string& fn, const size_t nb_threads) const {
 
     if (fn.length() == 0) return false;
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(fn.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1336,7 +1336,7 @@ bool CompactedDBG<U, G>::writeBinary(const string& fn, const size_t nb_threads) 
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinary(ostream& out, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinary(std::ostream& out, const size_t nb_threads) const {
 
 	if (!out.fail()) {
 
@@ -1349,12 +1349,12 @@ bool CompactedDBG<U, G>::writeBinary(ostream& out, const size_t nb_threads) cons
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinaryGraph(const string& fn, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinaryGraph(const std::string& fn, const size_t nb_threads) const {
 
     if (fn.length() == 0) return false;
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(fn.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1363,7 +1363,7 @@ bool CompactedDBG<U, G>::writeBinaryGraph(const string& fn, const size_t nb_thre
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinaryGraph(ostream& out, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinaryGraph(std::ostream& out, const size_t nb_threads) const {
 
     bool write_success = !out.fail();
 
@@ -1410,12 +1410,12 @@ bool CompactedDBG<U, G>::writeBinaryGraph(ostream& out, const size_t nb_threads)
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinaryIndex(const string& fn, const uint64_t checksum, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinaryIndex(const std::string& fn, const uint64_t checksum, const size_t nb_threads) const {
 
     if (fn.length() == 0) return false;
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(fn.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1424,7 +1424,7 @@ bool CompactedDBG<U, G>::writeBinaryIndex(const string& fn, const uint64_t check
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum, const size_t nb_threads) const {
+bool CompactedDBG<U, G>::writeBinaryIndex(std::ostream& out, const uint64_t checksum, const size_t nb_threads) const {
 
     bool write_success = !out.fail();
 
@@ -1432,7 +1432,7 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
 
     std::atomic<size_t> nb_special_minz;
 
-    vector<BitContainer> v_bmp_minz(nb_bmp_minz);
+    std::vector<BitContainer> v_bmp_minz(nb_bmp_minz);
 
     nb_special_minz = 0;
 
@@ -1461,9 +1461,9 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
     if (write_success) {
 
         const size_t v_unitigs_sz = v_unitigs.size();
-        const size_t nb_block_unitigs = max(static_cast<size_t>((v_unitigs_sz + 15) / 16) + 1, static_cast<size_t>(1));
+        const size_t nb_block_unitigs = std::max(static_cast<size_t>((v_unitigs_sz + 15) / 16) + 1, static_cast<size_t>(1));
 
-        vector<size_t> v_block_len_unitigs(nb_block_unitigs, 0);
+        std::vector<size_t> v_block_len_unitigs(nb_block_unitigs, 0);
 
         for (size_t i = 0; i < v_unitigs_sz; ++i) v_block_len_unitigs[(i >> 4) + 1] += v_unitigs[i]->getSeq().size() - g_ + 1;
         for (size_t i = 1; i < nb_block_unitigs; ++i) v_block_len_unitigs[i] += v_block_len_unitigs[i-1];
@@ -1471,12 +1471,12 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
         const size_t nb_bmp_unitigs = (v_block_len_unitigs.back() >> 32) + 1;
         const size_t nb_bmp_km_short = ((km_unitigs.size() * (k_ - g_ + 1)) >> 32) + 1;
 
-        vector<BitContainer> v_bmp_unitigs(nb_bmp_unitigs), v_bmp_km_short(nb_bmp_km_short);
-        vector<SpinLock> s_bmp_unitigs(nb_bmp_unitigs), s_bmp_km_short(nb_bmp_km_short), s_bmp_minz(nb_bmp_minz);
+        std::vector<BitContainer> v_bmp_unitigs(nb_bmp_unitigs), v_bmp_km_short(nb_bmp_km_short);
+        std::vector<SpinLock> s_bmp_unitigs(nb_bmp_unitigs), s_bmp_km_short(nb_bmp_km_short), s_bmp_minz(nb_bmp_minz);
 
         auto compactMinimizers = [&](MinimizerIndex::const_iterator it, MinimizerIndex::const_iterator ite, size_t id_minz) {
 
-        	vector<BitContainer> lv_bmp_unitigs(nb_bmp_unitigs), lv_bmp_km_short(nb_bmp_km_short), lv_bmp_minz(nb_bmp_minz);
+        	std::vector<BitContainer> lv_bmp_unitigs(nb_bmp_unitigs), lv_bmp_km_short(nb_bmp_km_short), lv_bmp_minz(nb_bmp_minz);
 
         	size_t l_nb_special_minz = 0;
 
@@ -1608,9 +1608,9 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
 	        }
 	        else {
 
-		        vector<thread> workers; // need to keep track of threads so we can join them
+		        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-		        mutex mutex_minz_idx;
+		        std::mutex mutex_minz_idx;
 
 		        for (size_t t = 0; t < nb_threads; ++t){
 
@@ -1626,7 +1626,7 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
 		                    while (true) {
 
 		                        {
-		                            unique_lock<mutex> lock(mutex_minz_idx);
+		                            std::unique_lock<std::mutex> lock(mutex_minz_idx);
 
 		                            if (it == ite) return;
 
@@ -1682,7 +1682,7 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
 
     	size_t id_special = 0;
 
-    	vector<BitContainer> v_bmp_abundant(nb_bmp_special_minz), v_bmp_overcrowded(nb_bmp_special_minz);
+    	std::vector<BitContainer> v_bmp_abundant(nb_bmp_special_minz), v_bmp_overcrowded(nb_bmp_special_minz);
 
 		{
         	size_t id_minz = 0;
@@ -1815,7 +1815,7 @@ bool CompactedDBG<U, G>::writeBinaryIndex(ostream& out, const uint64_t checksum,
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::makeGraphFromGFA(const string& fn, const size_t nb_threads) {
+void CompactedDBG<U, G>::makeGraphFromGFA(const std::string& fn, const size_t nb_threads) {
 
     size_t graph_file_id = 0;
 
@@ -1848,9 +1848,9 @@ void CompactedDBG<U, G>::makeGraphFromGFA(const string& fn, const size_t nb_thre
 
         SpinLock lck_unitig, lck_kmer;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
+        std::mutex mutex_file;
 
         v_kmers_sz = 0;
         v_unitigs_sz = 0;
@@ -1863,12 +1863,12 @@ void CompactedDBG<U, G>::makeGraphFromGFA(const string& fn, const size_t nb_thre
 
                 [&]{
 
-                    vector<string> seq;
+                    std::vector<std::string> seq;   
 
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_file);
+                            std::unique_lock<std::mutex> lock(mutex_file);
 
                             if (stop) return;
 
@@ -1899,13 +1899,13 @@ void CompactedDBG<U, G>::makeGraphFromGFA(const string& fn, const size_t nb_thre
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::makeGraphFromFASTA(const string& fn, const size_t nb_threads) {
+void CompactedDBG<U, G>::makeGraphFromFASTA(const std::string& fn, const size_t nb_threads) {
 
     size_t graph_file_id = 0;
 
-    FastqFile ff(vector<string>(1, fn));
+    FastqFile ff(std::vector<std::string>(1, fn));
 
-    string seq;
+    std::string seq;
 
     /*if (nb_threads == 1)*/{
 
@@ -1922,9 +1922,9 @@ void CompactedDBG<U, G>::makeGraphFromFASTA(const string& fn, const size_t nb_th
 
         SpinLock lck_unitig, lck_kmer;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
+        std::mutex mutex_file;
 
         v_kmers_sz = 0;
         v_unitigs_sz = 0;
@@ -1937,12 +1937,12 @@ void CompactedDBG<U, G>::makeGraphFromFASTA(const string& fn, const size_t nb_th
 
                 [&]{
 
-                    vector<string> v_seq;
+                    std::vector<std::string> v_seq;
 
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_file);
+                            std::unique_lock<std::mutex> lock(mutex_file);
 
                             if (stop) return;
 
@@ -1971,11 +1971,11 @@ void CompactedDBG<U, G>::makeGraphFromFASTA(const string& fn, const size_t nb_th
 }
 
 template<typename U, typename G>
-pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexFASTA(const string& graph_fn, const string& index_fn, const size_t k, const size_t g) {
+std::pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexFASTA(const std::string& graph_fn, const std::string& index_fn, const size_t k, const size_t g) {
 
-    FastqFile ff(vector<string>(1, graph_fn));
+    FastqFile ff(std::vector<std::string>(1, graph_fn));
 
-    string seq;
+    std::string seq;
 
 	size_t file_format_version = 0, v_unitigs_sz = 0, km_unitigs_sz = 0, h_kmers_ccov_sz = 0, hmap_min_unitigs_sz = 0, graph_file_id = 0;
 	uint64_t read_checksum = 0, graph_checksum = 0;
@@ -2005,7 +2005,7 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexFASTA(const string& g
                 Unitig<U>* unitig;
 
                 graph_checksum = cs.hash(graph_checksum);
-                unitig = new Unitig<U>(move(cs), move(cc));
+                unitig = new Unitig<U>(std::move(cs), std::move(cc));
 
                 v_unitigs.push_back(unitig);
 	    	}
@@ -2074,7 +2074,7 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexFASTA(const string& g
 }
 
 template<typename U, typename G>
-pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexGFA(const string& graph_fn, const string& index_fn, const size_t k, const size_t g) {
+std::pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexGFA(const std::string& graph_fn, const std::string& index_fn, const size_t k, const size_t g) {
 
     bool new_file_opened = false;
 
@@ -2116,7 +2116,7 @@ pair<uint64_t, bool> CompactedDBG<U, G>::readGraphFromIndexGFA(const string& gra
 	                Unitig<U>* unitig;
 
 	                graph_checksum = cs.hash(graph_checksum);
-	                unitig = new Unitig<U>(move(cs), move(cc));
+	                unitig = new Unitig<U>(std::move(cs), std::move(cc));
 
 	                v_unitigs.push_back(unitig);
             	}

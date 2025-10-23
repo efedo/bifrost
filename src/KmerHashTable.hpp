@@ -145,7 +145,7 @@ struct KmerHashTable {
 
             const size_t sz_with_empty = static_cast<size_t>((1.0 + (1.0 - ratio_occupancy)) * sz);
 
-            init_tables(max(sz_with_empty, static_cast<size_t>(BIFROST_KHT_INIT_SZ)));
+            init_tables(std::max(sz_with_empty, static_cast<size_t>(BIFROST_KHT_INIT_SZ)));
         }
     }
 
@@ -450,14 +450,14 @@ struct KmerHashTable {
     }
 
     // Insert with Robin Hood hashing
-    pair<KmerHashTable::iterator, bool> insert(const Kmer& key, const T& val) {
+    std::pair<KmerHashTable::iterator, bool> insert(const Kmer& key, const T& val) {
 
         if (size_ == 0) init_tables(BIFROST_KHT_INIT_SZ);
         else if (pop >= static_cast<size_t>(size_ * max_ratio_occupancy)) {
 
-            size_t resize = max(1.2 * size_, static_cast<double>(1 + size_));
+            size_t resize = std::max(1.2 * size_, static_cast<double>(1 + size_));
 
-            while (pop >= static_cast<size_t>(resize * max_ratio_occupancy)) resize = max(1.2 * resize, static_cast<double>(1 + resize));
+            while (pop >= static_cast<size_t>(resize * max_ratio_occupancy)) resize = std::max(1.2 * resize, static_cast<double>(1 + resize));
 
             reserve(resize);
         }
@@ -470,7 +470,7 @@ struct KmerHashTable {
         size_t h_rich_psl_ins = 0;
         size_t psl_ins_key = 0, psl_rich_key = 0, psl_curr_key = 0;
 
-        pair<KmerHashTable::iterator, bool> it_ret;
+        std::pair<KmerHashTable::iterator, bool> it_ret;
 
         Kmer l_key = key;
         T l_val = val;
@@ -503,7 +503,7 @@ struct KmerHashTable {
 
                     if (!cascade_ins) it_ret = {iterator(this, h, psl_rich_key), true};
 
-                    max_psl = max(max_psl, psl_rich_key + 1);
+                    max_psl = std::max(max_psl, psl_rich_key + 1);
                     sum_psl -= psl_curr_key;
                     sum_psl += psl_rich_key;
 
@@ -516,7 +516,7 @@ struct KmerHashTable {
                     table_keys[h] = std::move(l_key);
                     table_values[h] = std::move(l_val);
 
-                    max_psl = max(max_psl, psl_ins_key + 1);
+                    max_psl = std::max(max_psl, psl_ins_key + 1);
                     sum_psl += psl_ins_key;
 
                     if (!cascade_ins) it_ret = {iterator(this, h, psl_ins_key), true};
@@ -550,7 +550,7 @@ struct KmerHashTable {
     }
 
     // Insert with Robin Hood hashing
-    pair<KmerHashTable::iterator, bool> insert(Kmer&& key, T&& val) {
+    std::pair<KmerHashTable::iterator, bool> insert(Kmer&& key, T&& val) {
 
         if (size_ == 0) init_tables(BIFROST_KHT_INIT_SZ);
         else if (pop >= static_cast<size_t>(size_ * max_ratio_occupancy)) {
@@ -570,7 +570,7 @@ struct KmerHashTable {
         size_t h_rich_psl_ins = 0;
         size_t psl_ins_key = 0, psl_rich_key = 0, psl_curr_key = 0;
 
-        pair<KmerHashTable::iterator, bool> it_ret;
+        std::pair<KmerHashTable::iterator, bool> it_ret;
 
         Kmer l_key = std::move(key);
         T l_val = std::move(val);
@@ -603,7 +603,7 @@ struct KmerHashTable {
 
                     if (!cascade_ins) it_ret = {iterator(this, h, psl_rich_key), true};
 
-                    max_psl = max(max_psl, psl_rich_key + 1);
+                    max_psl = std::max(max_psl, psl_rich_key + 1);
                     sum_psl -= psl_curr_key;
                     sum_psl += psl_rich_key;
 
@@ -616,7 +616,7 @@ struct KmerHashTable {
                     table_keys[h] = std::move(l_key);
                     table_values[h] = std::move(l_val);
 
-                    max_psl = max(max_psl, psl_ins_key + 1);
+                    max_psl = std::max(max_psl, psl_ins_key + 1);
                     sum_psl += psl_ins_key;
 
                     if (!cascade_ins) it_ret = {iterator(this, h, psl_ins_key), true};
@@ -664,7 +664,7 @@ struct KmerHashTable {
                         const size_t h = fastmod::fastmod_u64(table_keys[i].hash(), M_u64, size_);
                         const size_t psl = ((size_ - h + i) & (static_cast<size_t>(i >= h) - 1)) + ((i - h) & (static_cast<size_t>(i < h) - 1));
 
-                        max_psl = max(max_psl, psl + 1);
+                        max_psl = std::max(max_psl, psl + 1);
                     }
                 }
             }
@@ -672,9 +672,9 @@ struct KmerHashTable {
 
                 const size_t chunk_per_thread = (size_ + nb_threads - 1) / nb_threads;
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mtx_max_psl;
+                std::mutex mtx_max_psl;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -683,7 +683,7 @@ struct KmerHashTable {
                         [&, t]{
 
                             const size_t chunk_start = t * chunk_per_thread;
-                            const size_t chunk_end = min(((t+1) * chunk_per_thread), size_);
+                            const size_t chunk_end = std::min(((t+1) * chunk_per_thread), size_);
 
                             size_t l_max_psl = 1;
 
@@ -694,14 +694,14 @@ struct KmerHashTable {
                                     const size_t h = fastmod::fastmod_u64(table_keys[i].hash(), M_u64, size_);
                                     const size_t psl = ((size_ - h + i) & (static_cast<size_t>(i >= h) - 1)) + ((i - h) & (static_cast<size_t>(i < h) - 1));
 
-                                    l_max_psl = max(l_max_psl, psl + 1);
+                                    l_max_psl = std::max(l_max_psl, psl + 1);
                                 }
                             }
 
                             {
-                                unique_lock<mutex> lock(mtx_max_psl);
+                                std::unique_lock<std::mutex> lock(mtx_max_psl);
 
-                                max_psl = max(max_psl, l_max_psl);
+                                max_psl = std::max(max_psl, l_max_psl);
                             }
                         }
                     );

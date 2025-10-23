@@ -1,5 +1,7 @@
 #include "MinimizerIndex.hpp"
 
+using namespace std;
+
 MinimizerIndex::MinimizerIndex() :  table_keys(nullptr), table_tinyv(nullptr), table_tinyv_sz(nullptr) {
 
     clear_tables();
@@ -355,9 +357,9 @@ pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert(const Minimizer& key
 
                 std::swap(table_keys[h], l_key);
 
-                l_ptv_swap.move(l_flag_swap, move(table_tinyv[h]), move(table_tinyv_sz[h]));
-                table_tinyv[h].move(table_tinyv_sz[h], move(l_ptv), move(l_flag));
-                l_ptv.move(l_flag, move(l_ptv_swap), move(l_flag_swap));
+                l_ptv_swap.move(l_flag_swap, std::move(table_tinyv[h]), std::move(table_tinyv_sz[h]));
+                table_tinyv[h].move(table_tinyv_sz[h], std::move(l_ptv), std::move(l_flag));
+                l_ptv.move(l_flag, std::move(l_ptv_swap), std::move(l_flag_swap));
 
                 if (!cascade_ins) it_ret = {iterator(this, h, psl_rich_key), true};
 
@@ -373,7 +375,7 @@ pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert(const Minimizer& key
 
                 table_keys[h] = l_key;
                 table_tinyv_sz[h] = packed_tiny_vector::FLAG_EMPTY;
-                table_tinyv[h].move(table_tinyv_sz[h], move(l_ptv), move(l_flag));
+                table_tinyv[h].move(table_tinyv_sz[h], std::move(l_ptv), std::move(l_flag));
 
                 max_psl = max(max_psl, psl_ins_key + 1);
                 sum_psl += psl_ins_key;
@@ -601,9 +603,9 @@ void MinimizerIndex::swap(const size_t i, const size_t j) {
 
     packed_tiny_vector ptv;
 
-    ptv.move(ptv_sz, move(table_tinyv[i]), move(table_tinyv_sz[i]));
-    table_tinyv[i].move(table_tinyv_sz[i], move(table_tinyv[j]), move(table_tinyv_sz[j]));
-    table_tinyv[j].move(table_tinyv_sz[j], move(ptv), move(ptv_sz));
+    ptv.move(ptv_sz, std::move(table_tinyv[i]), std::move(table_tinyv_sz[i]));
+    table_tinyv[i].move(table_tinyv_sz[i], std::move(table_tinyv[j]), std::move(table_tinyv_sz[j]));
+    table_tinyv[j].move(table_tinyv_sz[j], std::move(ptv), std::move(ptv_sz));
 
     std::swap(table_keys[i], table_keys[j]);
 }

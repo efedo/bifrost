@@ -333,7 +333,7 @@ bool check_ProgramOptions(CCDBG_Build_opt& opt) {
             }
         }
 
-        v_files = move(files_tmp);
+        v_files = std::move(files_tmp);
 
         delete[] buffer;
     };
@@ -672,7 +672,7 @@ int main(int argc, char **argv){
                             ColoredCDBG<>& ccdbg_a = (ccdbg1_len > ccdbg2_len) ? ccdbg1 : ccdbg2;
                             ColoredCDBG<>& ccdbg_b = (ccdbg1_len > ccdbg2_len) ? ccdbg2 : ccdbg1;
 
-                            if (success) success = ccdbg_a.merge(move(ccdbg_b), lopt.nb_threads, lopt.verbose);
+                            if (success) success = ccdbg_a.merge(std::move(ccdbg_b), lopt.nb_threads, lopt.verbose);
 
                             if (success) success = ccdbg_a.simplify(lopt.deleteIsolated, lopt.clipTips, lopt.verbose);
                             if (success) success = ccdbg_a.write(lopt.prefixFilenameOut, lopt.nb_threads, lopt.writeIndexFile, lopt.compressOutput, lopt.verbose);

@@ -22,9 +22,9 @@ CompactedDBG<U, G>::CompactedDBG(const CompactedDBG<U, G>& o) : k_(o.k_), g_(o.g
 
 template<typename U, typename G>
 CompactedDBG<U, G>::CompactedDBG(CompactedDBG<U, G>&& o) :  k_(o.k_), g_(o.g_), invalid(o.invalid),
-                                                            km_unitigs(move(o.km_unitigs)), data(move(o.data)),
-                                                            v_unitigs(move(o.v_unitigs)), h_kmers_ccov(move(o.h_kmers_ccov)),
-                                                            hmap_min_unitigs(move(o.hmap_min_unitigs)){
+                                                            km_unitigs(std::move(o.km_unitigs)), data(std::move(o.data)),
+                                                            v_unitigs(std::move(o.v_unitigs)), h_kmers_ccov(std::move(o.h_kmers_ccov)),
+                                                            hmap_min_unitigs(std::move(o.hmap_min_unitigs)){
 
     o.clear();
 }
@@ -52,7 +52,7 @@ CompactedDBG<U, G>& CompactedDBG<U, G>::operator=(const CompactedDBG<U, G>& o){
 
     data = o.data;
 
-    v_unitigs = vector<Unitig<U>*>(o.v_unitigs.size(), nullptr);
+    v_unitigs = std::vector<Unitig<U>*>(o.v_unitigs.size(), nullptr);
 
     for (size_t i = 0; i < o.v_unitigs.size(); ++i){
 
@@ -78,7 +78,7 @@ CompactedDBG<U, G>& CompactedDBG<U, G>::toDataGraph(CompactedDBG<void, void>&& o
 
     data = wrapperData<G>();
 
-    v_unitigs = vector<Unitig<U>*>(o.v_unitigs.size(), nullptr);
+    v_unitigs = std::vector<Unitig<U>*>(o.v_unitigs.size(), nullptr);
 
     auto moveUnitigs = [&](const size_t start, const size_t end){
 
@@ -93,7 +93,7 @@ CompactedDBG<U, G>& CompactedDBG<U, G>::toDataGraph(CompactedDBG<void, void>&& o
     if ((nb_threads == 1) || (v_unitigs.size() < 1024)) moveUnitigs(0, v_unitigs.size());
     else {
 
-        vector<thread> workers;
+        std::vector<std::thread> workers;
 
         const size_t slice = (v_unitigs.size() / nb_threads) + 1;
 
@@ -104,7 +104,7 @@ CompactedDBG<U, G>& CompactedDBG<U, G>::toDataGraph(CompactedDBG<void, void>&& o
                 [&, t]{
 
                     const size_t start = t * slice;
-                    const size_t end = min(start + slice, v_unitigs.size());
+                    const size_t end = std::min(start + slice, v_unitigs.size());
 
                     if (start < v_unitigs.size()) moveUnitigs(start, end);
                 }
@@ -125,7 +125,7 @@ CompactedDBG<U, G>& CompactedDBG<U, G>::toDataGraph(CompactedDBG<void, void>&& o
 
         Kmer km = it_s.getKey();
 
-        h_kmers_ccov.insert(move(km), move(it_s->ccov));
+        h_kmers_ccov.insert(std::move(km), std::move(it_s->ccov));
 
         ++it_s;
     }
@@ -185,8 +185,8 @@ bool CompactedDBG<U, G>::operator==(const CompactedDBG<U, G>& o) const {
                 um_o.dist = 0;
                 um_o.len = um_o.size - k_ + 1;
 
-                const string unitig_str = unitig.referenceUnitigToString();
-                const string unitig_o_str = um_o.referenceUnitigToString();
+                const std::string unitig_str = unitig.referenceUnitigToString();
+                const std::string unitig_o_str = um_o.referenceUnitigToString();
 
                 if ((unitig_o_str != unitig_str) && (reverse_complement(unitig_o_str) != unitig_str)) return false;
             }
@@ -233,19 +233,19 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
     if (invalid){
 
-        cerr << "CompactedDBG::build(): Graph is invalid and cannot be built" << endl;
+        std::cerr << "CompactedDBG::build(): Graph is invalid and cannot be built" << std::endl;
         construct_finished = false;
     }
 
     if (opt.nb_threads <= 0){
 
-        cerr << "CompactedDBG::build(): Number of threads cannot be less than or equal to 0" << endl;
+        std::cerr << "CompactedDBG::build(): Number of threads cannot be less than or equal to 0" << std::endl;
         construct_finished = false;
     }
 
     if (opt.nb_threads > max_threads){
 
-        cerr << "CompactedDBG::build(): Number of threads cannot exceed " << max_threads << "threads" << endl;
+        std::cerr << "CompactedDBG::build(): Number of threads cannot exceed " << max_threads << "threads" << std::endl;
         construct_finished = false;
     }
 
@@ -255,7 +255,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
         if (fp == NULL) {
 
-            cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << endl;
+            std::cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << std::endl;
             construct_finished = false;
         }
         else {
@@ -264,7 +264,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             if (std::remove(opt.outFilenameBBF.c_str()) != 0){
 
-                cerr << "CompactedDBG::build(): Could not remove temporary file " << opt.outFilenameBBF << "." << endl;
+                std::cerr << "CompactedDBG::build(): Could not remove temporary file " << opt.outFilenameBBF << "." << std::endl;
             }
         }
     }
@@ -277,21 +277,21 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             if (fp == NULL) {
 
-                cerr << "CompactedDBG::build(): Could not read input Blocked Bloom filter file " << opt.inFilenameBBF << "." << endl;
+                std::cerr << "CompactedDBG::build(): Could not read input Blocked Bloom filter file " << opt.inFilenameBBF << "." << std::endl;
                 construct_finished = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "CompactedDBG::build(): Input Blocked Bloom filter file " << opt.inFilenameBBF << " does not exist." << endl;
+            std::cerr << "CompactedDBG::build(): Input Blocked Bloom filter file " << opt.inFilenameBBF << " does not exist." << std::endl;
             construct_finished = false;
         }
     }
 
     if (opt.filename_seq_in.size() + opt.filename_ref_in.size() == 0){
 
-        cerr << "CompactedDBG::build(): Number of FASTA/FASTQ files in input cannot be 0." << endl;
+        std::cerr << "CompactedDBG::build(): Number of FASTA/FASTQ files in input cannot be 0." << std::endl;
         construct_finished = false;
     }
     else {
@@ -304,14 +304,14 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 if (fp == NULL) {
 
-                    cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << endl;
+                    std::cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << std::endl;
                     construct_finished = false;
                 }
                 else fclose(fp);
             }
             else {
 
-                cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << endl;
+                std::cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << std::endl;
                 construct_finished = false;
             }
         }
@@ -324,14 +324,14 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 if (fp == NULL) {
 
-                    cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << endl;
+                    std::cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << std::endl;
                     construct_finished = false;
                 }
                 else fclose(fp);
             }
             else {
 
-                cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << endl;
+                std::cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << std::endl;
                 construct_finished = false;
             }
         }
@@ -382,7 +382,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             const bool reference_mode = (opt.filename_ref_in.size() != 0);
 
-            const vector<string>& v_files = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
+            const std::vector<std::string>& v_files = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
 
             setFullCoverage(reference_mode ? 1 : 2);
 
@@ -398,20 +398,20 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             KmerStream kms(kms_opt);
 
-            const size_t nb_unique_kmers = max(1UL, kms.KmerF0());
-            const size_t nb_unique_minimizers = max(1UL, kms.MinimizerF0());
-            const size_t nb_non_unique_kmers = reference_mode ? 0 : max(1UL, nb_unique_kmers - min(nb_unique_kmers, kms.Kmerf1()));
-            const size_t nb_non_unique_minimizers = reference_mode ? 0 : max(1UL, nb_unique_minimizers - min(nb_unique_minimizers, kms.Minimizerf1()));
+            const size_t nb_unique_kmers = std::max(1UL, kms.KmerF0());
+            const size_t nb_unique_minimizers = std::max(1UL, kms.MinimizerF0());
+            const size_t nb_non_unique_kmers = reference_mode ? 0 : std::max(1UL, nb_unique_kmers - std::min(nb_unique_kmers, kms.Kmerf1()));
+            const size_t nb_non_unique_minimizers = reference_mode ? 0 : std::max(1UL, nb_unique_minimizers - std::min(nb_unique_minimizers, kms.Minimizerf1()));
 
             if (opt.verbose){
 
-                cout << "CompactedDBG::build(): Estimated number of k-mers occurring at least once: " << nb_unique_kmers << endl;
-                cout << "CompactedDBG::build(): Estimated number of minimizer occurring at least once: " << nb_unique_minimizers << endl;
+                std::cout << "CompactedDBG::build(): Estimated number of k-mers occurring at least once: " << nb_unique_kmers << std::endl;
+                std::cout << "CompactedDBG::build(): Estimated number of minimizer occurring at least once: " << nb_unique_minimizers << std::endl;
 
                 if (!reference_mode){
 
-                    cout << "CompactedDBG::build(): Estimated number of k-mers occurring twice or more: " << nb_non_unique_kmers << endl;
-                    cout << "CompactedDBG::build(): Estimated number of minimizers occurring twice or more: " << nb_non_unique_minimizers << endl;
+                    std::cout << "CompactedDBG::build(): Estimated number of k-mers occurring twice or more: " << nb_non_unique_kmers << std::endl;
+                    std::cout << "CompactedDBG::build(): Estimated number of minimizers occurring twice or more: " << nb_non_unique_minimizers << std::endl;
                 }
             }
 
@@ -421,7 +421,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 if (fp == NULL) {
 
-                    cerr << "CompactedDBG::build(): Could not open input Blocked Bloom filter file " << opt.inFilenameBBF << "." << endl;
+                    std::cerr << "CompactedDBG::build(): Could not open input Blocked Bloom filter file " << opt.inFilenameBBF << "." << std::endl;
                     construct_finished = false;
                 }
                 else {
@@ -441,7 +441,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                     if (fp == NULL) {
 
-                        cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << endl;
+                        std::cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << std::endl;
                         construct_finished = false;
                     }
                     else {
@@ -475,19 +475,19 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
     if (invalid){
 
-        cerr << "CompactedDBG::build(): Graph is invalid and cannot be built" << endl;
+        std::cerr << "CompactedDBG::build(): Graph is invalid and cannot be built" << std::endl;
         construct_finished = false;
     }
 
     if (opt.nb_threads <= 0){
 
-        cerr << "CompactedDBG::build(): Number of threads cannot be less than or equal to 0" << endl;
+        std::cerr << "CompactedDBG::build(): Number of threads cannot be less than or equal to 0" << std::endl;
         construct_finished = false;
     }
 
     if (opt.nb_threads > max_threads){
 
-        cerr << "CompactedDBG::build(): Number of threads cannot exceed " << max_threads << "threads" << endl;
+        std::cerr << "CompactedDBG::build(): Number of threads cannot exceed " << max_threads << "threads" << std::endl;
         construct_finished = false;
     }
 
@@ -497,7 +497,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
         if (fp == NULL) {
 
-            cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << endl;
+            std::cerr << "CompactedDBG::build(): Could not open Blocked Bloom filter file " << opt.outFilenameBBF << " for writing." << std::endl;
             construct_finished = false;
         }
         else {
@@ -506,7 +506,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             if (std::remove(opt.outFilenameBBF.c_str()) != 0){
 
-                cerr << "CompactedDBG::build(): Could not remove temporary file " << opt.outFilenameBBF << "." << endl;
+                std::cerr << "CompactedDBG::build(): Could not remove temporary file " << opt.outFilenameBBF << "." << std::endl;
             }
         }
     }
@@ -519,21 +519,21 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             if (fp == NULL) {
 
-                cerr << "CompactedDBG::build(): Could not read input Blocked Bloom filter file " << opt.inFilenameBBF << "." << endl;
+                std::cerr << "CompactedDBG::build(): Could not read input Blocked Bloom filter file " << opt.inFilenameBBF << "." << std::endl;
                 construct_finished = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "CompactedDBG::build(): Input Blocked Bloom filter file " << opt.inFilenameBBF << " does not exist." << endl;
+            std::cerr << "CompactedDBG::build(): Input Blocked Bloom filter file " << opt.inFilenameBBF << " does not exist." << std::endl;
             construct_finished = false;
         }
     }
 
     if (opt.filename_seq_in.size() + opt.filename_ref_in.size() == 0){
 
-        cerr << "CompactedDBG::build(): Number of FASTA/FASTQ files in input cannot be 0." << endl;
+        std::cerr << "CompactedDBG::build(): Number of FASTA/FASTQ files in input cannot be 0." << std::endl;
         construct_finished = false;
     }
     else {
@@ -546,14 +546,14 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 if (fp == NULL) {
 
-                    cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << endl;
+                    std::cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << std::endl;
                     construct_finished = false;
                 }
                 else fclose(fp);
             }
             else {
 
-                cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << endl;
+                std::cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << std::endl;
                 construct_finished = false;
             }
         }
@@ -566,14 +566,14 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 if (fp == NULL) {
 
-                    cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << endl;
+                    std::cerr << "CompactedDBG::build(): Could not open input FASTA/FASTQ file " << file << std::endl;
                     construct_finished = false;
                 }
                 else fclose(fp);
             }
             else {
 
-                cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << endl;
+                std::cerr << "CompactedDBG::build(): Input file " << opt.inFilenameBBF << " does not exist." << std::endl;
                 construct_finished = false;
             }
         }
@@ -620,7 +620,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
             setFullCoverage(2);
         }
-        else if (!is_void<U>::value) {
+        else if (!std::is_void<U>::value) {
 
             CompactedDBG<void, void> graph(k_, g_);
 
@@ -636,7 +636,7 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
             size_t nb_non_unique_kmers, nb_non_unique_minimizers;
 
             {
-                const vector<string>& v_files = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
+                const std::vector<std::string>& v_files = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
 
                 KmerStream_Build_opt kms_opt;
 
@@ -650,20 +650,20 @@ bool CompactedDBG<U, G>::build(CDBG_Build_opt& opt){
 
                 KmerStream kms(kms_opt);
 
-                nb_unique_kmers = max(1UL, kms.KmerF0());
-                nb_unique_minimizers = max(1UL, kms.MinimizerF0());
-                nb_non_unique_kmers = reference_mode ? 0 : max(1UL, nb_unique_kmers - min(nb_unique_kmers, kms.Kmerf1()));
-                nb_non_unique_minimizers = reference_mode ? 0 : max(1UL, nb_unique_minimizers - min(nb_unique_minimizers, kms.Minimizerf1()));
+                nb_unique_kmers = std::max(1UL, kms.KmerF0());
+                nb_unique_minimizers = std::max(1UL, kms.MinimizerF0());
+                nb_non_unique_kmers = reference_mode ? 0 : std::max(1UL, nb_unique_kmers - std::min(nb_unique_kmers, kms.Kmerf1()));
+                nb_non_unique_minimizers = reference_mode ? 0 : std::max(1UL, nb_unique_minimizers - std::min(nb_unique_minimizers, kms.Minimizerf1()));
 
                 if (opt.verbose){
 
-                    cout << "CompactedDBG::build(): Estimated number of k-mers occurring at least once: " << nb_unique_kmers << endl;
-                    cout << "CompactedDBG::build(): Estimated number of minimizer occurring at least once: " << nb_unique_minimizers << endl;
+                    std::cout << "CompactedDBG::build(): Estimated number of k-mers occurring at least once: " << nb_unique_kmers << std::endl;
+                    std::cout << "CompactedDBG::build(): Estimated number of minimizer occurring at least once: " << nb_unique_minimizers << std::endl;
 
                     if (!reference_mode){
 
-                        cout << "CompactedDBG::build(): Estimated number of k-mers occurring twice or more: " << nb_non_unique_kmers << endl;
-                        cout << "CompactedDBG::build(): Estimated number of minimizers occurring twice or more: " << nb_non_unique_minimizers << endl;
+                        std::cout << "CompactedDBG::build(): Estimated number of k-mers occurring twice or more: " << nb_non_unique_kmers << std::endl;
+                        std::cout << "CompactedDBG::build(): Estimated number of minimizers occurring twice or more: " << nb_non_unique_minimizers << std::endl;
                     }
                 }
             }
@@ -692,28 +692,28 @@ bool CompactedDBG<U, G>::simplify(const bool delete_short_isolated_unitigs, cons
 
     if (invalid){
 
-        cerr << "CompactedDBG::simplify(): Graph is invalid and cannot be simplified" << endl;
+        std::cerr << "CompactedDBG::simplify(): Graph is invalid and cannot be simplified" << std::endl;
         return false;
     }
 
     if (delete_short_isolated_unitigs || clip_short_tips){
 
-        if (verbose) cout << endl << "CompactedDBG::simplify(): Removing isolated unitigs and/or clipping tips" << endl;
+        if (verbose) std::cout << std::endl << "CompactedDBG::simplify(): Removing isolated unitigs and/or clipping tips" << std::endl;
 
-        vector<Kmer> v_joins;
+        std::vector<Kmer> v_joins;
         size_t joined = 0;
 
         size_t removed = removeUnitigs(delete_short_isolated_unitigs, clip_short_tips, v_joins);
 
-        if (clip_short_tips) joined = joinUnitigs_<is_void<U>::value>(&v_joins);
+        if (clip_short_tips) joined = joinUnitigs_<std::is_void<U>::value>(&v_joins);
 
         v_joins.clear();
 
         if (verbose){
 
-            cout << "CompactedDBG::simplify(): After: " << size() << " unitigs" << endl;
-            cout << "CompactedDBG::simplify(): Removed " << removed << " unitigs" << endl;
-            cout << "CompactedDBG::simplify(): Joined " << joined << " unitigs" << endl;
+            std::cout << "CompactedDBG::simplify(): After: " << size() << " unitigs" << std::endl;
+            std::cout << "CompactedDBG::simplify(): Removed " << removed << " unitigs" << std::endl;
+            std::cout << "CompactedDBG::simplify(): Joined " << joined << " unitigs" << std::endl;
         }
     }
 
@@ -725,7 +725,7 @@ const_UnitigMap<U, G> CompactedDBG<U, G>::find(const char* s, const size_t pos_k
 
     if (invalid){
 
-        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << std::endl;
         return const_UnitigMap<U, G>();
     }
 
@@ -849,7 +849,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const char* s, const size_t pos_km, con
 
     if (invalid){
 
-        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << std::endl;
         return UnitigMap<U, G>();
     }
 
@@ -973,7 +973,7 @@ const_UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extrem
 
     if (invalid){
 
-        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << std::endl;
         return const_UnitigMap<U, G>();
     }
 
@@ -1092,17 +1092,17 @@ const_UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extrem
 }
 
 /*template<typename U, typename G>
-vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::find(const Minimizer& minz) const {
+std::vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::find(const Minimizer& minz) const {
 
     if (invalid){
 
-        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
-        return vector<const_UnitigMap<U, G>>();
+        std::cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << std::endl;
+        return std::vector<const_UnitigMap<U, G>>();
     }
 
-    vector<const_UnitigMap<U, G>> v_um;
+    std::vector<const_UnitigMap<U, G>> v_um;
 
-    const Minimizer minz_rep = minz.rep();
+    const Minimizer minz_rep = std::minz.rep();
     const MinimizerIndex::const_iterator it = hmap_min_unitigs.find(minz_rep);
 
     if (it != hmap_min_unitigs.end()){ // If the minimizer is found
@@ -1132,7 +1132,7 @@ vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::find(const Minimizer& minz) co
                     const size_t pos_s = (unitig_id_pos + g_ < k_) ? 0 : (unitig_id_pos + g_ - k_);
                     const size_t pos_e = (unitig_id_pos + k_ > len_unitig) ? len_unitig : (unitig_id_pos + k_);
 
-                    const string subseq = v_unitigs[unitig_id]->getSeq().toString(pos_s, pos_e - pos_s);
+                    const std::string subseq = v_unitigs[unitig_id]->getSeq().toString(pos_s, pos_e - pos_s);
 
                     const char* subseq_str = subseq.c_str();
 
@@ -1148,10 +1148,10 @@ vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::find(const Minimizer& minz) co
 
                         while (mhrit_s != mhrit_e) {
 
-                            if (Minimizer(subseq_str + mhrit_s->pos).rep() == minz_rep) {
+                            if (Minimizer(subseq_str + mhrit_s->pos).rep() == std::minz_rep) {
 
-                                l_pos_s = min(l_pos_s, static_cast<size_t>(mhi_s.getKmerPosition()));
-                                l_pos_e = max(l_pos_e, static_cast<size_t>(mhi_s.getKmerPosition()));
+                                l_pos_s = std::min(l_pos_s, static_cast<size_t>(mhi_s.getKmerPosition()));
+                                l_pos_e = std::max(l_pos_e, static_cast<size_t>(mhi_s.getKmerPosition()));
 
                                 break;
                             }
@@ -1176,7 +1176,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_
 
     if (invalid){
 
-        cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "CompactedDBG::find(): Graph is invalid and cannot be searched" << std::endl;
         return UnitigMap<U, G>();
     }
 
@@ -1295,7 +1295,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const bool extremities_
 }
 
 template<typename U, typename G>
-vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, const bool extremities_only) const {
+std::vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, const bool extremities_only) const {
 
     const Kmer km_pred[4] = {km.backwardBase('A'), km.backwardBase('C'), km.backwardBase('G'), km.backwardBase('T')};
     const Kmer km_rep[4] = {km_pred[0].rep(), km_pred[1].rep(), km_pred[2].rep(), km_pred[3].rep()};
@@ -1318,7 +1318,7 @@ vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& k
 
     minHashResult mhr, mhr_tmp;
 
-    vector<const_UnitigMap<U, G>> v_um(4, const_UnitigMap<U, G>(1, this));
+    std::vector<const_UnitigMap<U, G>> v_um(4, const_UnitigMap<U, G>(1, this));
 
     while (it_it_min != it_it_min_end){
 
@@ -1451,7 +1451,7 @@ vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& k
 }
 
 template<typename U, typename G>
-vector<UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, const bool extremities_only) {
+std::vector<UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, const bool extremities_only) {
 
     const Kmer km_pred[4] = {km.backwardBase('A'), km.backwardBase('C'), km.backwardBase('G'), km.backwardBase('T')};
     const Kmer km_rep[4] = {km_pred[0].rep(), km_pred[1].rep(), km_pred[2].rep(), km_pred[3].rep()};
@@ -1474,7 +1474,7 @@ vector<UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, con
 
     minHashResult mhr, mhr_tmp;
 
-    vector<UnitigMap<U, G>> v_um(4, UnitigMap<U, G>(1, this));
+    std::vector<UnitigMap<U, G>> v_um(4, UnitigMap<U, G>(1, this));
 
     while (it_it_min != it_it_min_end){
 
@@ -1607,9 +1607,9 @@ vector<UnitigMap<U, G>> CompactedDBG<U, G>::findPredecessors(const Kmer& km, con
 }
 
 template<typename U, typename G>
-vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km, const size_t limit, const bool extremities_only) const {
+std::vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km, const size_t limit, const bool extremities_only) const {
 
-    vector<const_UnitigMap<U, G>> v_um(4, const_UnitigMap<U, G>(1, this));
+    std::vector<const_UnitigMap<U, G>> v_um(4, const_UnitigMap<U, G>(1, this));
 
     if (limit == 0) return v_um;
 
@@ -1797,9 +1797,9 @@ vector<const_UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km,
 }
 
 template<typename U, typename G>
-vector<UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km, const size_t limit, const bool extremities_only) {
+std::vector<UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km, const size_t limit, const bool extremities_only) {
 
-    vector<UnitigMap<U, G>> v_um(4, UnitigMap<U, G>(1, this));
+    std::vector<UnitigMap<U, G>> v_um(4, UnitigMap<U, G>(1, this));
 
     if (limit == 0) return v_um;
 
@@ -1987,25 +1987,25 @@ vector<UnitigMap<U, G>> CompactedDBG<U, G>::findSuccessors(const Kmer& km, const
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::add(const string& seq, const bool verbose){
+bool CompactedDBG<U, G>::add(const std::string& seq, const bool verbose){
 
     if (invalid){
 
-        cerr << "CompactedDBG::add(): Graph is invalid and no sequence can be added to it" << endl;
+        std::cerr << "CompactedDBG::add(): Graph is invalid and no sequence can be added to it" << std::endl;
         return false;
     }
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::add(): Input sequence length cannot be less than k = " << k_ << endl;
+        std::cerr << "CompactedDBG::add(): Input sequence length cannot be less than k = " << k_ << std::endl;
         return false;
     }
 
     const char* str_seq = seq.c_str();
 
-    string no_dup_km_seq;
+    std::string no_dup_km_seq;
 
-    unordered_set<Kmer, KmerHash> km_seen;
+    std::unordered_set<Kmer, KmerHash> km_seen;
 
     size_t last_start_pos = 0;
 
@@ -2039,13 +2039,13 @@ bool CompactedDBG<U, G>::remove(const const_UnitigMap<U, G>& um, const bool verb
 
     if (invalid){
 
-        cerr << "CompactedDBG::remove(): Graph is invalid and no unitig can be removed from it" << endl;
+        std::cerr << "CompactedDBG::remove(): Graph is invalid and no unitig can be removed from it" << std::endl;
         return false;
     }
 
     if (um.isEmpty) return false;
 
-    vector<Kmer> v_km;
+    std::vector<Kmer> v_km;
 
     const Kmer head(um.getUnitigHead());
     const Kmer tail(um.getUnitigTail());
@@ -2066,7 +2066,7 @@ bool CompactedDBG<U, G>::remove(const const_UnitigMap<U, G>& um, const bool verb
 
     if (um.isAbundant){
 
-        deleteUnitig_<is_void<U>::value>(um.isShort, um.isAbundant, um.pos_unitig);
+        deleteUnitig_<std::is_void<U>::value>(um.isShort, um.isAbundant, um.pos_unitig);
     }
     else {
 
@@ -2074,13 +2074,13 @@ bool CompactedDBG<U, G>::remove(const const_UnitigMap<U, G>& um, const bool verb
 
         if (um.pos_unitig != swap_position) swapUnitigs(um.isShort, um.pos_unitig, swap_position);
 
-        deleteUnitig_<is_void<U>::value>(um.isShort, um.isAbundant, swap_position);
+        deleteUnitig_<std::is_void<U>::value>(um.isShort, um.isAbundant, swap_position);
 
         if (um.isShort) km_unitigs.resize(swap_position);
         else v_unitigs.resize(swap_position);
     }
 
-    joinUnitigs_<is_void<U>::value>(&v_km);
+    joinUnitigs_<std::is_void<U>::value>(&v_km);
 
     return true;
 }
@@ -2092,31 +2092,31 @@ bool CompactedDBG<U, G>::merge(const CompactedDBG& o, const size_t nb_threads, c
 
     if (invalid){
 
-         if (verbose) cerr << "CompactedDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
     if (o.invalid){
 
-         if (verbose) cerr << "CompactedDBG::merge(): Graph to merge is invalid." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): Graph to merge is invalid." << std::endl;
          ret = false;
     }
 
     if (k_ != o.k_){
 
-         if (verbose) cerr << "CompactedDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
          ret = false;
     }
 
     if (g_ != o.g_){
 
-         if (verbose) cerr << "CompactedDBG::merge(): The graphs to merge do not have the same minimizer length." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): The graphs to merge do not have the same minimizer length." << std::endl;
          ret = false;
     }
 
     if (this == &o){
 
-         if (verbose) cerr << "CompactedDBG::merge(): Cannot merge graph with itself." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): Cannot merge graph with itself." << std::endl;
          ret = false;
     }
 
@@ -2129,18 +2129,18 @@ bool CompactedDBG<U, G>::merge(const CompactedDBG& o, const size_t nb_threads, c
         if (annotateSplitUnitigs(o, nb_threads, verbose)){
 
             const size_t sz_after = size();
-            const pair<size_t, size_t> p = splitAllUnitigs();
-            const size_t joined = (p.second != 0) ? joinUnitigs_<is_void<U>::value>() : 0;
+            const std::pair<size_t, size_t> p = splitAllUnitigs();
+            const size_t joined = (p.second != 0) ? joinUnitigs_<std::is_void<U>::value>() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p.first << " unitigs into " << p.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p.first << " unitigs into " << p.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << size() << " unitigs after merging." << std::endl;
             }
 
-            if (!is_void<U>::value) mergeData(o, nb_threads, verbose);
+            if (!std::is_void<U>::value) mergeData(o, nb_threads, verbose);
 
             return true;
         }
@@ -2150,13 +2150,13 @@ bool CompactedDBG<U, G>::merge(const CompactedDBG& o, const size_t nb_threads, c
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::merge(const vector<CompactedDBG>& v, const size_t nb_threads, const bool verbose){
+bool CompactedDBG<U, G>::merge(const std::vector<CompactedDBG>& v, const size_t nb_threads, const bool verbose){
 
     bool ret = true;
 
     if (invalid){
 
-         if (verbose) cerr << "CompactedDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "CompactedDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
@@ -2164,25 +2164,25 @@ bool CompactedDBG<U, G>::merge(const vector<CompactedDBG>& v, const size_t nb_th
 
         if (cdbg.invalid){
 
-             if (verbose) cerr << "CompactedDBG::merge(): One of the graph to merge is invalid." << endl;
+             if (verbose) std::cerr << "CompactedDBG::merge(): One of the graph to merge is invalid." << std::endl;
              ret = false;
         }
 
         if (k_ != cdbg.k_){
 
-             if (verbose) cerr << "CompactedDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+             if (verbose) std::cerr << "CompactedDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
              ret = false;
         }
 
         if (g_ != cdbg.g_){
 
-             if (verbose) cerr << "CompactedDBG::merge(): The graphs to merge do not have the same minimizer length." << endl;
+             if (verbose) std::cerr << "CompactedDBG::merge(): The graphs to merge do not have the same minimizer length." << std::endl;
              ret = false;
         }
 
         if (this == &cdbg){
 
-             if (verbose) cerr << "CompactedDBG::merge(): Cannot merge graph with itself." << endl;
+             if (verbose) std::cerr << "CompactedDBG::merge(): Cannot merge graph with itself." << std::endl;
              ret = false;
         }
     }
@@ -2203,18 +2203,18 @@ bool CompactedDBG<U, G>::merge(const vector<CompactedDBG>& v, const size_t nb_th
         if (ret){
 
             const size_t sz_after = size();
-            const pair<size_t, size_t> p = splitAllUnitigs();
-            const size_t joined = (p.second != 0) ? joinUnitigs_<is_void<U>::value>() : 0;
+            const std::pair<size_t, size_t> p = splitAllUnitigs();
+            const size_t joined = (p.second != 0) ? joinUnitigs_<std::is_void<U>::value>() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p.first << " unitigs into " << p.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p.first << " unitigs into " << p.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << size() << " unitigs after merging." << std::endl;
             }
 
-            if (!is_void<U>::value){
+            if (!std::is_void<U>::value){
 
                 for (const auto& cdbg : v) mergeData(cdbg, nb_threads, verbose);
             }
@@ -2233,9 +2233,9 @@ bool CompactedDBG<U, G>::annotateSplitUnitigs(const CompactedDBG<U, G>& o, const
 
         if (verbose){
 
-            cout << "CompactedDBG::annotateSplitUnitigs(): Current graph has " << size() << " unitigs." << endl;
-            cout << "CompactedDBG::annotateSplitUnitigs(): Graph to merge has " << o.size() << " unitigs." << endl;
-            cout << "CompactedDBG::annotateSplitUnitigs(): Start unitigs merging." << endl;
+            std::cout << "CompactedDBG::annotateSplitUnitigs(): Current graph has " << size() << " unitigs." << std::endl;
+            std::cout << "CompactedDBG::annotateSplitUnitigs(): Graph to merge has " << o.size() << " unitigs." << std::endl;
+            std::cout << "CompactedDBG::annotateSplitUnitigs(): Start unitigs merging." << std::endl;
         }
 
         if (nb_threads == 1){
@@ -2247,14 +2247,14 @@ bool CompactedDBG<U, G>::annotateSplitUnitigs(const CompactedDBG<U, G>& o, const
             const size_t chunk = 100;
             const size_t nb_locks = nb_threads * 1024;
 
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
             typename CompactedDBG<U, G>::const_iterator g_a(o.begin());
             typename CompactedDBG<U, G>::const_iterator g_b(o.end());
 
             LockGraph lck_g(nb_locks);
 
-            mutex mutex_o_unitig;
+            std::mutex mutex_o_unitig;
 
             for (size_t t = 0; t < nb_threads; ++t){
 
@@ -2267,7 +2267,7 @@ bool CompactedDBG<U, G>::annotateSplitUnitigs(const CompactedDBG<U, G>& o, const
                         while (true) {
 
                             {
-                                unique_lock<mutex> lock(mutex_o_unitig);
+                                std::unique_lock<std::mutex> lock(mutex_o_unitig);
 
                                 if (g_a == g_b) return;
 
@@ -2291,7 +2291,7 @@ bool CompactedDBG<U, G>::annotateSplitUnitigs(const CompactedDBG<U, G>& o, const
             for (auto& t : workers) t.join();
         }
 
-        if (verbose) cout << "CompactedDBG::annotateSplitUnitigs(): Merging unitigs finished." << endl;
+        if (verbose) std::cout << "CompactedDBG::annotateSplitUnitigs(): Merging unitigs finished." << std::endl;
 
         return true;
     }
@@ -2304,7 +2304,7 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
 
     if ((this != &o) && !invalid && !o.invalid){ // TODO: Check if k_ and g_ are the same
 
-        if (verbose) cout << "CompactedDBG::mergeData(): Merging data started." << endl;
+        if (verbose) std::cout << "CompactedDBG::mergeData(): Merging data started." << std::endl;
 
         const size_t nb_locks = nb_threads * 1024;
 
@@ -2316,7 +2316,7 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
 
             while (it_a != it_b) {
 
-                const string str(it_a->referenceUnitigToString());
+                const std::string str(it_a->referenceUnitigToString());
                 const char* str_seq = str.c_str();
 
                 for (KmerIterator it_km(str_seq), it_km_end; it_km != it_km_end;) { //non-ACGT char. are discarded
@@ -2337,7 +2337,7 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
 
                         while (locks_unitig[id_lock].test_and_set(std::memory_order_acquire));
 
-                        mergeData_<is_void<U>::value>(um_dest, um_src);
+                        mergeData_<std::is_void<U>::value>(um_dest, um_src);
 
                         locks_unitig[id_lock].clear(std::memory_order_release);
 
@@ -2351,12 +2351,12 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
 
         const size_t chunk = 100;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
         typename CompactedDBG<U, G>::const_iterator g_a = o.begin();
         typename CompactedDBG<U, G>::const_iterator g_b = o.end();
 
-        mutex mutex_it;
+        std::mutex mutex_it;
 
         for (size_t t = 0; t < nb_threads; ++t){
 
@@ -2369,7 +2369,7 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_it);
+                            std::unique_lock<std::mutex> lock(mutex_it);
 
                             if (g_a == g_b) return;
 
@@ -2389,7 +2389,7 @@ bool CompactedDBG<U, G>::mergeData(const CompactedDBG<U, G>& o, const size_t nb_
 
         for (auto& t : workers) t.join();
 
-        if (verbose) cout << "CompactedDBG::mergeData(): Merging data finished." << endl;
+        if (verbose) std::cout << "CompactedDBG::mergeData(): Merging data finished." << std::endl;
 
         delete[] locks_unitig;
 
@@ -2404,7 +2404,7 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
 
     if ((this != &o) && !invalid && !o.invalid){ // TODO: Check if k_ and g_ are the same
 
-        if (verbose) cout << "CompactedDBG::mergeData(): Merging data started." << endl;
+        if (verbose) std::cout << "CompactedDBG::mergeData(): Merging data started." << std::endl;
 
         const size_t nb_locks = nb_threads * 1024;
 
@@ -2416,7 +2416,7 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
 
             while (it_a != it_b) {
 
-                const string str(it_a->referenceUnitigToString());
+                const std::string str(it_a->referenceUnitigToString());
                 const char* str_seq = str.c_str();
 
                 for (KmerIterator it_km(str_seq), it_km_end; it_km != it_km_end;) { //non-ACGT char. are discarded
@@ -2437,7 +2437,7 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
 
                         while (locks_unitig[id_lock].test_and_set(std::memory_order_acquire));
 
-                        mergeData_<is_void<U>::value>(um_dest, um_src);
+                        mergeData_<std::is_void<U>::value>(um_dest, um_src);
 
                         locks_unitig[id_lock].clear(std::memory_order_release);
 
@@ -2453,12 +2453,12 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
 
         const size_t chunk = 100;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
         typename CompactedDBG<U, G>::iterator g_a = o.begin();
         typename CompactedDBG<U, G>::iterator g_b = o.end();
 
-        mutex mutex_it;
+        std::mutex mutex_it;
 
         for (size_t t = 0; t < nb_threads; ++t){
 
@@ -2471,7 +2471,7 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_it);
+                            std::unique_lock<std::mutex> lock(mutex_it);
 
                             if (g_a == g_b) return;
 
@@ -2491,7 +2491,7 @@ bool CompactedDBG<U, G>::mergeData(CompactedDBG<U, G>&& o, const size_t nb_threa
 
         for (auto& t : workers) t.join();
 
-        if (verbose) cout << "CompactedDBG::mergeData(): Merging data finished." << endl;
+        if (verbose) std::cout << "CompactedDBG::mergeData(): Merging data finished." << std::endl;
 
         delete[] locks_unitig;
 
@@ -2564,7 +2564,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
     if (invalid){
 
-        cerr << "CompactedDBG::filter(): Graph is invalid and it cannot be built" << endl;
+        std::cerr << "CompactedDBG::filter(): Graph is invalid and it cannot be built" << std::endl;
         return false;
     }
 
@@ -2573,15 +2573,15 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
     const size_t thread_seq_buf_sz = BUFFER_SIZE;
 
-    const vector<string>& filename_in = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
+    const std::vector<std::string>& filename_in = reference_mode ? opt.filename_ref_in : opt.filename_seq_in;
 
     size_t len_read = 0;
     size_t pos_read = 0;
     size_t read_id = 0;
 
-    atomic<uint64_t> num_kmers(0), num_ins(0), num_seq_tot(0);
+    std::atomic<uint64_t> num_kmers(0), num_ins(0), num_seq_tot(0);
 
-    string s;
+    std::string s;
 
     FileParser fp(filename_in);
 
@@ -2619,7 +2619,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
                 for (; it_kmer_h != it_kmer_h_end; ++it_kmer_h, ++l_num_kmers) {
 
-                    const pair<uint64_t, int> p_ = *it_kmer_h; // <k-mer hash, k-mer position in sequence>
+                    const std::pair<uint64_t, int> p_ = *it_kmer_h; // <k-mer hash, k-mer position in sequence>
 
                     it_min += (p_.second - it_min.getKmerPosition()); //If one or more k-mer were jumped because contained non-ACGT char.
 
@@ -2635,7 +2635,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
                 for (; it_kmer_h != it_kmer_h_end; ++it_kmer_h, ++l_num_kmers) {
 
-                    const pair<uint64_t, int> p_ = *it_kmer_h; // <k-mer hash, k-mer position in sequence>
+                    const std::pair<uint64_t, int> p_ = *it_kmer_h; // <k-mer hash, k-mer position in sequence>
 
                     it_min += (p_.second - it_min.getKmerPosition()); //If one or more k-mer were jumped because contained non-ACGT char.
 
@@ -2715,10 +2715,10 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
     {
         bool stop = false;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
-        mutex mutex_bitmap;
+        std::mutex mutex_file;
+        std::mutex mutex_bitmap;
 
         for (size_t t = 0; t < opt.nb_threads; ++t){
 
@@ -2734,7 +2734,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_file);
+                            std::unique_lock<std::mutex> lock(mutex_file);
 
                             if (stop) {
 
@@ -2749,7 +2749,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
                         const Roaring lr = worker_function(buffer_seq, buffer_seq_sz, prev_read_id);
 
                         {
-                            unique_lock<mutex> lock(mutex_bitmap);
+                            std::unique_lock<std::mutex> lock(mutex_bitmap);
 
                             r |= lr;
                         }
@@ -2771,7 +2771,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
         char* tmp_dir = nullptr;
 
-        string tmp_dir_path;
+        std::string tmp_dir_path;
 
         bf1.clear(); // Empty BF1, not needed anymore
 
@@ -2781,7 +2781,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
                 if (!check_dir_writable(opt.prefixTmp) || !check_dir_readable(opt.prefixTmp)) {
 
-                    cerr << "CompactedDBG::filter(): Tmp directory does not exist or is not readable/writable. Abort." << endl;
+                    std::cerr << "CompactedDBG::filter(): Tmp directory does not exist or is not readable/writable. Abort." << std::endl;
 
                     return false;
                 }
@@ -2800,14 +2800,14 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
             if (mkdtemp(tmp_dir) == nullptr) {
 
-                cerr << "CompactedDBG::filter(): Could not create tmp directory. Abort." << endl;
+                std::cerr << "CompactedDBG::filter(): Could not create tmp directory. Abort." << std::endl;
 
                 return false;
             }
         }
 
         {
-            const string tmp_bbf_fn = string(tmp_dir) + string("/km.bbf");
+            const std::string tmp_bbf_fn = std::string(tmp_dir) + std::string("/km.bbf");
 
             // Write BF2 to disk
             {
@@ -2815,7 +2815,7 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
                 if (!bf2.write(fp_bbf)) {
 
-                    cerr << "CompactedDBG::filter(): Could not write temporary Blocked Bloom Filter file. Abort." << endl;
+                    std::cerr << "CompactedDBG::filter(): Could not write temporary Blocked Bloom Filter file. Abort." << std::endl;
 
                     exit(1);
                 }
@@ -2830,25 +2830,25 @@ bool CompactedDBG<U, G>::filter(const CDBG_Build_opt& opt, DualBlockedBloomFilte
 
                 if (!bf_d.readFromBBF(fp_bbf, 0)) {
 
-                    cerr << "CompactedDBG::filter(): Could not read temporary Blocked Bloom Filter file. Abort." << endl;
+                    std::cerr << "CompactedDBG::filter(): Could not read temporary Blocked Bloom Filter file. Abort." << std::endl;
                     exit(1);
                 }
 
                 fclose(fp_bbf);
             }
 
-            if (std::remove(tmp_bbf_fn.c_str()) != 0) cerr << "CompactedDBG::filter(): Could not remove temporary Blocked Bloom Filter file." << endl;
+            if (std::remove(tmp_bbf_fn.c_str()) != 0) std::cerr << "CompactedDBG::filter(): Could not remove temporary Blocked Bloom Filter file." << std::endl;
         }
 
-        if (rmdir(tmp_dir) != 0) cerr << "CompactedDBG::filter(): Could not remove temporary directory." << endl;
+        if (rmdir(tmp_dir) != 0) std::cerr << "CompactedDBG::filter(): Could not remove temporary directory." << std::endl;
         if (tmp_dir != nullptr) delete[] tmp_dir;
     }
 
     if (opt.verbose) {
 
-        cout << "CompactedDBG::filter(): Processed " << num_kmers << " k-mers in " << read_id  << " reads" << endl;
-        cout << "CompactedDBG::filter(): Found " << num_ins << " unique k-mers" << endl;
-        cout << "CompactedDBG::filter(): Number of blocks in Bloom filter is " << bf_d.getNbBlocks() << endl;
+        std::cout << "CompactedDBG::filter(): Processed " << num_kmers << " k-mers in " << read_id  << " reads" << std::endl;
+        std::cout << "CompactedDBG::filter(): Found " << num_ins << " unique k-mers" << std::endl;
+        std::cout << "CompactedDBG::filter(): Number of blocks in Bloom filter is " << bf_d.getNbBlocks() << std::endl;
     }
 
     return true;
@@ -2859,7 +2859,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
     if (invalid){
 
-        cerr << "CompactedDBG::construct(): Graph is invalid and cannot be built" << endl;
+        std::cerr << "CompactedDBG::construct(): Graph is invalid and cannot be built" << std::endl;
         return false;
     }
 
@@ -2869,10 +2869,10 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
     const size_t thread_seq_buf_sz = BUFFER_SIZE;
     const size_t nb_locks = opt.nb_threads * 1024;
 
-    const size_t nb_estimated_min = max((reference_mode ? nb_unique_minimizers : nb_non_unique_minimizers), static_cast<size_t>(1));
-    const size_t nb_estimated_fp_tips = max((reference_mode ? nb_unique_kmers : nb_non_unique_kmers) * 8 * dbbf.getFPrate(), static_cast<double>(1));
+    const size_t nb_estimated_min = std::max((reference_mode ? nb_unique_minimizers : nb_non_unique_minimizers), static_cast<size_t>(1));
+    const size_t nb_estimated_fp_tips = std::max((reference_mode ? nb_unique_kmers : nb_non_unique_kmers) * 8 * dbbf.getFPrate(), static_cast<double>(1));
 
-    const vector<string>& filename_in = (reference_mode ? opt.filename_ref_in : opt.filename_seq_in);
+    const std::vector<std::string>& filename_in = (reference_mode ? opt.filename_ref_in : opt.filename_seq_in);
 
     size_t len_read = 0;
     size_t pos_read = 0;
@@ -2889,7 +2889,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
     SpinLock lck_kmt_fp_cand;
 
-    string s;
+    std::string s;
 
     BlockedBloomFilter bf_fp_tips(nb_estimated_fp_tips, opt.nb_bits_kmers_bf), bf;
 
@@ -2903,10 +2903,10 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
         char* str = seq_buf;
 
-        vector<Kmer> l_ignored_km_tips;
+        std::vector<Kmer> l_ignored_km_tips;
 
-        vector<CompressedSequence> v_approx_cs;
-        vector<Kmer> v_approx_km;
+        std::vector<CompressedSequence> v_approx_cs;
+        std::vector<Kmer> v_approx_km;
 
         RepHash rep;
 
@@ -2918,7 +2918,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
             for (size_t i = 0; i < len - k_ + 1; i += max_len_seq - k_ + 1){
 
-                const int curr_len = min(len - i, max_len_seq);
+                const int curr_len = std::min(len - i, max_len_seq);
                 const char saved_char = str[i + curr_len];
                 const char* str_tmp = str + i;
 
@@ -2939,7 +2939,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                         const Kmer km = Kmer(str_tmp + p_.second);
 
-                        string approx_unitig;
+                        std::string approx_unitig;
 
                         bool isIsolated = false;
 
@@ -2955,20 +2955,20 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                                 KmerHashIterator<RepHash> it_kmer_h2(approx_unitig.c_str(), approx_unitig.length(), k_), it_kmer_h_end2;
                                 minHashIterator<RepHash> it_min2(approx_unitig.c_str(), approx_unitig.length(), k_, g_, rep, true);
 
-                                vector<pair<uint64_t, uint64_t>> vh;
+                                std::vector<std::pair<uint64_t, uint64_t>> vh;
 
                                 vh.reserve(approx_unitig.length() - k_ + 1);
 
                                 for (; it_kmer_h2 != it_kmer_h_end2; ++it_kmer_h2) {
 
-                                    const pair<uint64_t, int> p_2 = *it_kmer_h2; // <k-mer hash, k-mer position in sequence>
+                                    const std::pair<uint64_t, int> p_2 = *it_kmer_h2; // <k-mer hash, k-mer position in sequence>
 
                                     it_min2 += (p_2.second - it_min2.getKmerPosition()); //If one or more k-mer were jumped because contained non-ACGT char.
 
                                     vh.push_back({p_2.first, it_min2.getHash()});
                                 }
 
-                                sort(vh.begin(), vh.end(), [](const pair<uint64_t, uint64_t>& l, const pair<uint64_t, uint64_t>& r) {
+                                sort(vh.begin(), vh.end(), [](const std::pair<uint64_t, uint64_t>& l, const std::pair<uint64_t, uint64_t>& r) {
                                                                 return (l.second < r.second) || ((l.second == r.second) && (l.first < r.first));
                                                             }
                                     );
@@ -2995,7 +2995,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
         for (const auto& km_tip : l_ignored_km_tips) {
 
-            const string km_str = km_tip.toString();
+            const std::string km_str = km_tip.toString();
             const uint64_t kmh = km_tip.hash();
 
             minHashIterator<RepHash> it_min(km_str.c_str(), km_str.length(), k_, g_, rep, true);
@@ -3005,12 +3005,12 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
             bf_fp_tips.insert(kmh, minh, multi_threaded);
         }
 
-        return pair<vector<CompressedSequence>, vector<Kmer>>(move(v_approx_cs), move(v_approx_km));
+        return std::pair<std::vector<CompressedSequence>, std::vector<Kmer>>(std::move(v_approx_cs), std::move(v_approx_km));
     };
 
     auto worker_map_function = [&](FileParser& fp, char* seq_buf, const size_t seq_buf_sz) {
 
-        vector<Kmer> l_ignored_km_tips;
+        std::vector<Kmer> l_ignored_km_tips;
 
         RepHash rep;
 
@@ -3030,7 +3030,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
             for (size_t i = 0; i < len - k_ + 1; i += max_len_seq - k_ + 1){
 
-                const int curr_len = min(len - i, max_len_seq);
+                const int curr_len = std::min(len - i, max_len_seq);
                 const char saved_char = str[i + curr_len];
                 const char* str_tmp = str + i;
 
@@ -3063,7 +3063,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                                 lck_h.release_reader();
 
-                                string approx_unitig;
+                                std::string approx_unitig;
 
                                 bool isIsolated = false;
 
@@ -3077,7 +3077,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                                     lck_kmt_fp_cand.acquire();
 
-                                    const pair<KmerHashTable<uint8_t>::const_iterator, bool> p_insert_kmt_fp_cand = kmt_fp_cand.insert(km_rep, 0);
+                                    const std::pair<KmerHashTable<uint8_t>::const_iterator, bool> p_insert_kmt_fp_cand = kmt_fp_cand.insert(km_rep, 0);
 
                                     has_full_cov = !p_insert_kmt_fp_cand.second;
 
@@ -3134,7 +3134,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
         for (const auto& km_tip : l_ignored_km_tips) {
 
-            const string km_str = km_tip.toString();
+            const std::string km_str = km_tip.toString();
             const uint64_t kmh = km_tip.hash();
 
             const minHashIterator<RepHash> it_min(km_str.c_str(), km_str.length(), k_, g_, rep, true);
@@ -3255,7 +3255,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
     {
         char* tmp_dir = nullptr;
 
-        string tmp_dir_path;
+        std::string tmp_dir_path;
 
         // Create tmp dir
         {
@@ -3263,7 +3263,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                 if (!check_dir_writable(opt.prefixTmp) || !check_dir_readable(opt.prefixTmp)) {
 
-                    cerr << "CompactedDBG::construct(): Tmp directory does not exist or is not readable/writable. Abort." << endl;
+                    std::cerr << "CompactedDBG::construct(): Tmp directory does not exist or is not readable/writable. Abort." << std::endl;
 
                     return false;
                 }
@@ -3282,13 +3282,13 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
             if (mkdtemp(tmp_dir) == nullptr) {
 
-                cerr << "CompactedDBG::construct(): Could not create tmp directory. Abort." << endl;
+                std::cerr << "CompactedDBG::construct(): Could not create tmp directory. Abort." << std::endl;
 
                 return false;
             }
         }
 
-        const string tmp_graph_fn = string(tmp_dir) + string("/approx_unitigs.fasta");
+        const std::string tmp_graph_fn = std::string(tmp_dir) + std::string("/approx_unitigs.fasta");
         const bool approx_unitigs_detected = (its != ite);
 
         size_t id_unitig_out = 0;
@@ -3299,17 +3299,17 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
             FileParser fp_in(filename_in);
 
-            ofstream outfile;
-            ostream out(0);
+            std::ofstream outfile;
+            std::ostream out(0);
 
             outfile.open(tmp_graph_fn.c_str());
             out.rdbuf(outfile.rdbuf());
 
-            mutex mtx_fn_in, mtx_fn_out;
+            std::mutex mtx_fn_in, mtx_fn_out;
 
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-            if (opt.verbose) cout << "CompactedDBG::construct(): Extract approximate unitigs (1/3)" << endl;
+            if (opt.verbose) std::cout << "CompactedDBG::construct(): Extract approximate unitigs (1/3)" << std::endl;
 
             for (size_t t = 0; t < opt.nb_threads; ++t) {
 
@@ -3317,7 +3317,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                     [&]{
 
-                        pair<vector<CompressedSequence>, vector<Kmer>> v_unitigs;
+                        std::pair<std::vector<CompressedSequence>, std::vector<Kmer>> v_unitigs;
 
                         char* buffer_seq = new char[thread_seq_buf_sz];
 
@@ -3327,17 +3327,17 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                         while (true) {
 
                             {
-                                unique_lock<mutex> lock(mtx_fn_in);
+                                std::unique_lock<std::mutex> lock(mtx_fn_in);
 
                                 stop = stop || (its == ite);
 
                                 if (stop) {
 
                                     {
-                                        unique_lock<mutex> lock(mtx_fn_out);
+                                        std::unique_lock<std::mutex> lock(mtx_fn_out);
 
-                                        for (const auto& cs : v_unitigs.first) out << ">" << id_unitig_out++ << "\n" << cs.toString() << endl;
-                                        for (const auto& km : v_unitigs.second) out << ">" << id_unitig_out++ << "\n" << km.toString() << endl;
+                                        for (const auto& cs : v_unitigs.first) out << ">" << id_unitig_out++ << "\n" << cs.toString() << std::endl;
+                                        for (const auto& km : v_unitigs.second) out << ">" << id_unitig_out++ << "\n" << km.toString() << std::endl;
                                     }
 
                                     delete[] buffer_seq;
@@ -3348,7 +3348,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                                 stop = reading_build_function(fp_in, buffer_seq, buffer_seq_sz);
                             }
 
-                            pair<vector<CompressedSequence>, vector<Kmer>> p_approx_unitigs = worker_build_function(fp_in, buffer_seq, buffer_seq_sz);
+                            std::pair<std::vector<CompressedSequence>, std::vector<Kmer>> p_approx_unitigs = worker_build_function(fp_in, buffer_seq, buffer_seq_sz);
 
                             v_unitigs.first.insert(v_unitigs.first.end(), p_approx_unitigs.first.begin(), p_approx_unitigs.first.end());
                             v_unitigs.second.insert(v_unitigs.second.end(), p_approx_unitigs.second.begin(), p_approx_unitigs.second.end());
@@ -3364,10 +3364,10 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                                 if (l_count >= 1000000) {
 
                                     {
-                                        unique_lock<mutex> lock(mtx_fn_out);
+                                        std::unique_lock<std::mutex> lock(mtx_fn_out);
 
-                                        for (const auto& cs : v_unitigs.first) out << ">" << id_unitig_out++ << "\n" << cs.toString() << endl;
-                                        for (const auto& km : v_unitigs.second) out << ">" << id_unitig_out++ << "\n" << km.toString() << endl;
+                                        for (const auto& cs : v_unitigs.first) out << ">" << id_unitig_out++ << "\n" << cs.toString() << std::endl;
+                                        for (const auto& km : v_unitigs.second) out << ">" << id_unitig_out++ << "\n" << km.toString() << std::endl;
                                     }
 
                                     v_unitigs.first.clear();
@@ -3392,13 +3392,13 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
         // Write DBBF[0] to disk, empty DBBF, reloads BF=DBBF[0]
         {
-            const string tmp_bbf_fn = string(tmp_dir) + string("/km.bbf");
+            const std::string tmp_bbf_fn = std::string(tmp_dir) + std::string("/km.bbf");
 
             FILE* fp_bbf = fopen(tmp_bbf_fn.c_str(), "wb");
 
             if (!dbbf.writeAsBBF(fp_bbf, 0)) {
 
-                cerr << "CompactedDBG::construct(): Could not write temporary Blocked Bloom Filter file. Abort." << endl;
+                std::cerr << "CompactedDBG::construct(): Could not write temporary Blocked Bloom Filter file. Abort." << std::endl;
                 exit(1);
             }
 
@@ -3410,24 +3410,24 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
             if (!bf.read(fp_bbf)) {
 
-                cerr << "CompactedDBG::construct(): Could not read temporary Blocked Bloom Filter file. Abort." << endl;
+                std::cerr << "CompactedDBG::construct(): Could not read temporary Blocked Bloom Filter file. Abort." << std::endl;
                 exit(1);
             }
 
             fclose(fp_bbf);
 
-            if (std::remove(tmp_bbf_fn.c_str()) != 0) cerr << "CompactedDBG::construct(): Could not remove temporary Blocked Bloom Filter file." << endl;
+            if (std::remove(tmp_bbf_fn.c_str()) != 0) std::cerr << "CompactedDBG::construct(): Could not remove temporary Blocked Bloom Filter file." << std::endl;
         }
 
         if (id_unitig_out != 0) {
 
-            const vector<string> v_tmp_file(1, tmp_graph_fn);
+            const std::vector<std::string> v_tmp_file(1, tmp_graph_fn);
 
             FileParser fp_approx_unitigs(v_tmp_file);
 
             size_t file_id_approx = 0;
 
-            string approx_unitig;
+            std::string approx_unitig;
 
             hmap_min_unitigs = MinimizerIndex(nb_estimated_min * 1.07); // Index has 95% max occupancy by default
 
@@ -3439,8 +3439,8 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
             h_kmers_ccov.recomputeMaxPSL(opt.nb_threads);
         }
 
-        if (approx_unitigs_detected && (std::remove(tmp_graph_fn.c_str()) != 0)) cerr << "CompactedDBG::construct(): Could not remove temporary file." << endl;
-        if (rmdir(tmp_dir) != 0) cerr << "CompactedDBG::construct(): Could not remove temporary directory." << endl;
+        if (approx_unitigs_detected && (std::remove(tmp_graph_fn.c_str()) != 0)) std::cerr << "CompactedDBG::construct(): Could not remove temporary file." << std::endl;
+        if (rmdir(tmp_dir) != 0) std::cerr << "CompactedDBG::construct(): Could not remove temporary directory." << std::endl;
 
         if (tmp_dir != nullptr) delete[] tmp_dir;
     }
@@ -3451,11 +3451,11 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
         FileParser fp(filename_in);
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
+        std::mutex mutex_file;
 
-        if (opt.verbose) cout << "CompactedDBG::construct(): Extract approximate unitigs (2/3)" << endl;
+        if (opt.verbose) std::cout << "CompactedDBG::construct(): Extract approximate unitigs (2/3)" << std::endl;
 
         unitig_full = new uint64_t[(v_unitigs.size() + km_unitigs.size() + 63) / 64](); // Kmers with abundant minimizers cannot be included here
 
@@ -3475,7 +3475,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_file);
+                            std::unique_lock<std::mutex> lock(mutex_file);
 
                             if (stop) {
 
@@ -3509,7 +3509,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
     lck_h.clear();
 
     {
-        if (opt.verbose) cout << "CompactedDBG::construct(): Extract approximate unitigs (3/3)" << endl;
+        if (opt.verbose) std::cout << "CompactedDBG::construct(): Extract approximate unitigs (3/3)" << std::endl;
 
         {
             for (typename h_kmers_ccov_t::iterator it = dbg_extra.h_kmers_ccov.begin(); it != dbg_extra.h_kmers_ccov.end(); ++it) {
@@ -3556,15 +3556,15 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
                 if (!u->getCov().isFull()) { //Coverage not full, unitig must be splitted
 
-                    const vector<pair<int,int>> sp = u->getCov().splittingVector();
+                    const std::vector<std::pair<int,int>> sp = u->getCov().splittingVector();
 
                     if (!sp.empty()) {
 
-                        const string unitig = u->getSeq().toString();
+                        const std::string unitig = u->getSeq().toString();
 
                         for (const auto& p : sp) {
 
-                            const string split_unitig = unitig.substr(p.first, (p.second - p.first) + k_ - 1); // Split unitig sequence
+                            const std::string split_unitig = unitig.substr(p.first, (p.second - p.first) + k_ - 1); // Split unitig sequence
                             const Kmer head_split_unitig = Kmer(split_unitig.c_str());
 
                             addUnitigSequence(split_unitig);
@@ -3577,7 +3577,7 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
                 }
                 else {
 
-                    const string unitig = u->getSeq().toString();
+                    const std::string unitig = u->getSeq().toString();
                     const Kmer head_unitig = Kmer(unitig.c_str());
 
                     addUnitigSequence(unitig);
@@ -3601,17 +3601,17 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
         dbg_extra.clear();
     }
 
-    if (opt.verbose) cout << "CompactedDBG::construct(): Closed all input files" << endl;
+    if (opt.verbose) std::cout << "CompactedDBG::construct(): Closed all input files" << std::endl;
 
     const size_t unitigsBefore = size();
 
-    if (opt.verbose) cout << endl << "CompactedDBG::construct(): Splitting unitigs (1/2)" << endl;
+    if (opt.verbose) std::cout << std::endl << "CompactedDBG::construct(): Splitting unitigs (1/2)" << std::endl;
 
-    pair<size_t, size_t> unitigSplit = extractAllUnitigs();
+    std::pair<size_t, size_t> unitigSplit = extractAllUnitigs();
 
     const int unitigsAfter1 = size();
 
-    if (opt.verbose) cout << endl << "CompactedDBG::construct(): Splitting unitigs (2/2)" << endl;
+    if (opt.verbose) std::cout << std::endl << "CompactedDBG::construct(): Splitting unitigs (2/2)" << std::endl;
 
     check_fp_tips(bf_fp_tips, opt.nb_threads);
 
@@ -3624,16 +3624,16 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
     if (opt.verbose) {
 
-        cout << "CompactedDBG::construct(): Before split: " << unitigsBefore << " unitigs" << endl;
-        cout << "CompactedDBG::construct(): After split (1/" << (reference_mode ? "1" : "2" ) << "): " << unitigsAfter1 << " unitigs" <<  endl;
-        if (!reference_mode) cout << "CompactedDBG::construct(): After split (2/2): " << unitigsAfter2 << " unitigs" <<  endl;
-        cout << "CompactedDBG::construct(): Unitigs split: " << unitigSplit.first << endl;
-        cout << "CompactedDBG::construct(): Unitigs deleted: " << unitigSplit.second << endl;
+        std::cout << "CompactedDBG::construct(): Before split: " << unitigsBefore << " unitigs" << std::endl;
+        std::cout << "CompactedDBG::construct(): After split (1/" << (reference_mode ? "1" : "2" ) << "): " << unitigsAfter1 << " unitigs" <<  std::endl;
+        if (!reference_mode) std::cout << "CompactedDBG::construct(): After split (2/2): " << unitigsAfter2 << " unitigs" <<  std::endl;
+        std::cout << "CompactedDBG::construct(): Unitigs split: " << unitigSplit.first << std::endl;
+        std::cout << "CompactedDBG::construct(): Unitigs deleted: " << unitigSplit.second << std::endl;
 
-        cout << endl << "CompactedDBG::construct(): Joining unitigs" << endl;
+        std::cout << std::endl << "CompactedDBG::construct(): Joining unitigs" << std::endl;
     }
 
-    const size_t joined = joinUnitigs_<is_void<U>::value>(nullptr, opt.nb_threads);
+    const size_t joined = joinUnitigs_<std::is_void<U>::value>(nullptr, opt.nb_threads);
 
     const int unitigsAfter3 = size();
 
@@ -3642,15 +3642,15 @@ bool CompactedDBG<U, G>::construct(const CDBG_Build_opt& opt, DualBlockedBloomFi
 
     if (opt.verbose) {
 
-        cout << "CompactedDBG::construct(): After join: " << unitigsAfter3 << " unitigs" << endl;
-        cout << "CompactedDBG::construct(): Joined " << joined << " unitigs" << endl;
+        std::cout << "CompactedDBG::construct(): After join: " << unitigsAfter3 << " unitigs" << std::endl;
+        std::cout << "CompactedDBG::construct(): Joined " << joined << " unitigs" << std::endl;
     }
 
     return true;
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::addUnitigSequence(const Kmer km, const string& seq, const size_t pos_match_km, const size_t len_match_km, LockGraph& lck_g, const bool map_read) {
+void CompactedDBG<U, G>::addUnitigSequence(const Kmer km, const std::string& seq, const size_t pos_match_km, const size_t len_match_km, LockGraph& lck_g, const bool map_read) {
 
     bool isAbundant = false;
 
@@ -3693,7 +3693,7 @@ void CompactedDBG<U, G>::addUnitigSequence(const Kmer km, const string& seq, con
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::addUnitigSequence(const string& seq) {
+void CompactedDBG<U, G>::addUnitigSequence(const std::string& seq) {
 
     const Kmer km = Kmer(seq.c_str());
 
@@ -3706,12 +3706,12 @@ void CompactedDBG<U, G>::addUnitigSequence(const string& seq) {
 
 
 template<typename U, typename G>
-size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const BlockedBloomFilter& bf, const Kmer km, string& s, bool& isIsolated, vector<Kmer>& l_ignored_km_tip) {
+size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const BlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip) {
 
-    string fw_s, bw_s;
+    std::string fw_s, bw_s;
 
     Kmer end(km);
-    Kmer last(km);
+    Kmer last(km);  
 
     char km_str[MAX_KMER_SIZE];
     char neigh_str[MAX_KMER_SIZE];
@@ -3736,7 +3736,7 @@ size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const BlockedBloomFilter& bf, c
 
     isIsolated = false;
 
-    pair<int, RepHash> p_neigh = fwStepBBF(bf, end, end, rep_neigh, neigh_str, has_no_neighbor, l_ignored_km_tip);
+    std::pair<int, RepHash> p_neigh = fwStepBBF(bf, end, end, rep_neigh, neigh_str, has_no_neighbor, l_ignored_km_tip);
 
     while (p_neigh.first != -1) {
 
@@ -3803,9 +3803,9 @@ size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const BlockedBloomFilter& bf, c
 }
 
 template<typename U, typename G>
-size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const DualBlockedBloomFilter& bf, const Kmer km, string& s, bool& isIsolated, vector<Kmer>& l_ignored_km_tip) {
+size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const DualBlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip) {
 
-    string fw_s, bw_s;
+    std::string fw_s, bw_s;
 
     Kmer end(km);
     Kmer last(km);
@@ -3833,7 +3833,7 @@ size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const DualBlockedBloomFilter& b
 
     isIsolated = false;
 
-    pair<int, RepHash> p_neigh = fwStepBBF(bf, end, end, rep_neigh, neigh_str, has_no_neighbor, l_ignored_km_tip);
+    std::pair<int, RepHash> p_neigh = fwStepBBF(bf, end, end, rep_neigh, neigh_str, has_no_neighbor, l_ignored_km_tip);
 
     while (p_neigh.first != -1) {
 
@@ -3898,7 +3898,7 @@ size_t CompactedDBG<U, G>::findUnitigSequenceBBF(const DualBlockedBloomFilter& b
 }
 
 template<typename U, typename G>
-pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
+std::pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
 
     char km_tmp[MAX_KMER_SIZE];
 
@@ -4069,7 +4069,7 @@ pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const BlockedBloomFilter& bf, c
 }
 
 template<typename U, typename G>
-pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
+std::pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
 
     char km_tmp[MAX_KMER_SIZE];
 
@@ -4240,7 +4240,7 @@ pair<int, RepHash> CompactedDBG<U, G>::bwStepBBF(const DualBlockedBloomFilter& b
 }
 
 template<typename U, typename G>
-pair<int, RepHash> CompactedDBG<U, G>::fwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
+std::pair<int, RepHash> CompactedDBG<U, G>::fwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
 
     char km_tmp[MAX_KMER_SIZE];
 
@@ -4412,7 +4412,7 @@ pair<int, RepHash> CompactedDBG<U, G>::fwStepBBF(const BlockedBloomFilter& bf, c
 }
 
 template<typename U, typename G>
-pair<int, RepHash> CompactedDBG<U, G>::fwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
+std::pair<int, RepHash> CompactedDBG<U, G>::fwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand) const {
 
     char km_tmp[MAX_KMER_SIZE];
 
@@ -4718,7 +4718,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::findUnitig(const Kmer& km, const char* s, co
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_unitig){
+bool CompactedDBG<U, G>::addUnitig(const std::string& str_unitig, const size_t id_unitig){
 
     const size_t len = str_unitig.size();
     size_t pos_id_unitig = id_unitig << 32;
@@ -4839,7 +4839,7 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
         if (id_unitig == km_unitigs.size()) km_unitigs.push_back(km_rep);
         else km_unitigs.set(id_unitig, km_rep);
 
-        deleteUnitig_<is_void<U>::value>(true, false, id_unitig, false);
+        deleteUnitig_<std::is_void<U>::value>(true, false, id_unitig, false);
 
         if (id_unitig == km_unitigs.size() - 1) km_unitigs.resize(km_unitigs.size() - 1);
 
@@ -4888,7 +4888,7 @@ void CompactedDBG<U, G>::moveToAbundant() {
     MinimizerIndex::iterator it = hmap_min_unitigs.begin();
     MinimizerIndex::iterator it_end = hmap_min_unitigs.end();
 
-    vector<size_t> v_km_rm;
+    std::vector<size_t> v_km_rm;
 
     char km_tmp[MAX_KMER_SIZE];
 
@@ -4917,7 +4917,7 @@ void CompactedDBG<U, G>::moveToAbundant() {
 
                 for (auto unitig_id : v_km_rm) {
 
-                    const string unitig_str = km_unitigs.getKmer(unitig_id).toString();
+                    const std::string unitig_str = km_unitigs.getKmer(unitig_id).toString();
 
                     {
                         size_t id_swap = km_unitigs.size() - 1;
@@ -4976,7 +4976,7 @@ void CompactedDBG<U, G>::moveToAbundant() {
 }
 
 /*template<typename U, typename G>
-bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer){
+bool CompactedDBG<U, G>::addUnitig(const std::string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer){
 
     const size_t len = str_unitig.size();
     size_t pos_id_unitig = id_unitig << 32;
@@ -5113,7 +5113,7 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
 }*/
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_unitig, const size_t id_unitig_r, const size_t is_short_r){
+bool CompactedDBG<U, G>::addUnitig(const std::string& str_unitig, const size_t id_unitig, const size_t id_unitig_r, const size_t is_short_r){
 
     const size_t pos_id_unitig_r = (id_unitig_r << 32) | ((static_cast<size_t>(!is_short_r) - 1) & MASK_CONTIG_TYPE);
 
@@ -5263,7 +5263,7 @@ bool CompactedDBG<U, G>::addUnitig(const string& str_unitig, const size_t id_uni
         if (id_unitig == km_unitigs.size()) km_unitigs.push_back(km_rep);
         else km_unitigs.set(id_unitig, km_rep);
 
-        deleteUnitig_<is_void<U>::value>(true, false, id_unitig, false);
+        deleteUnitig_<std::is_void<U>::value>(true, false, id_unitig, false);
 
         if (id_unitig == km_unitigs.size() - 1) km_unitigs.resize(km_unitigs.size() - 1);
 
@@ -5316,7 +5316,7 @@ void CompactedDBG<U, G>::swapUnitigs(const bool isShort, const size_t id_a, cons
     size_t shift_id_unitig_a = id_a << 32;
     size_t shift_id_unitig_b = id_b << 32;
 
-    unordered_set<Minimizer, MinimizerHash> us_minz;
+    std::unordered_set<Minimizer, MinimizerHash> us_minz;
 
     if (isShort){
 
@@ -5324,7 +5324,7 @@ void CompactedDBG<U, G>::swapUnitigs(const bool isShort, const size_t id_a, cons
         shift_id_unitig_b |= MASK_CONTIG_TYPE;
     }
 
-    auto swapUnitig = [&](const string str){
+    auto swapUnitig = [&](const std::string str){
 
         bool isForbidden = false;
 
@@ -5408,17 +5408,17 @@ void CompactedDBG<U, G>::swapUnitigs(const bool isShort, const size_t id_a, cons
 // Input sequence must not contain duplicated k-mers
 // If it does, use CompactedDBG<U, G>::add().
 template<typename U, typename G>
-bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
+bool CompactedDBG<U, G>::mergeUnitig(const std::string& seq, const bool verbose){
 
     if (invalid){
 
-        cerr << "CompactedDBG::mergeUnitig(): Graph is invalid and no sequence can be added to it" << endl;
+        std::cerr << "CompactedDBG::mergeUnitig(): Graph is invalid and no sequence can be added to it" << std::endl;
         return false;
     }
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::mergeUnitig(): Input sequence length cannot be less than k = " << k_ << endl;
+        std::cerr << "CompactedDBG::mergeUnitig(): Input sequence length cannot be less than k = " << k_ << std::endl;
         return false;
     }
 
@@ -5436,17 +5436,17 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
 
     bool prev_found = true;
 
-    string curr_unitig;
+    std::string curr_unitig;
 
-    vector<Kmer> v_joins;
+    std::vector<Kmer> v_joins;
 
-    KmerHashTable<vector<size_t>> kht;
+    KmerHashTable<std::vector<size_t>> kht;
 
     const char* str_seq = seq.c_str();
 
     const size_t str_seq_len = seq.length();
 
-    auto add_graph_function = [&](const string& unitig){
+    auto add_graph_function = [&](const std::string& unitig){
 
         const char* str_unitig = unitig.c_str();
         const size_t len_unitig = unitig.length();
@@ -5479,10 +5479,10 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
 
     auto add_split_function = [&](){
 
-        KmerHashTable<vector<size_t>>::iterator it(kht.begin());
-        const KmerHashTable<vector<size_t>>::iterator it_end(kht.end());
+        KmerHashTable<std::vector<size_t>>::iterator it(kht.begin());
+        const KmerHashTable<std::vector<size_t>>::iterator it_end(kht.end());
 
-        vector<pair<int,int>> sp;
+        std::vector<std::pair<int,int>> sp;
 
         while (it != it_end){
 
@@ -5491,7 +5491,7 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
 
             const_UnitigMap<U, G> um(find(it.getKey(), true));
 
-            vector<size_t>& split_v = *it;
+            std::vector<size_t>& split_v = *it;
 
             sort(split_v.begin(), split_v.end());
 
@@ -5517,7 +5517,7 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
             v_joins.push_back(um.getUnitigKmer(prev_split_pos));
             if (prev_split_pos != um.size - k_) v_joins.push_back(um.getUnitigKmer(um.size - k_));
 
-            extractUnitig_<is_void<U>::value>(um.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
+            extractUnitig_<std::is_void<U>::value>(um.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
 
             sp.clear();
             split_v.clear();
@@ -5536,8 +5536,8 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
 
         if (cm.isEmpty){
 
-            vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
-            vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
+            std::vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
+            std::vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
 
             nb_curr_pred = 0;
             nb_curr_succ = 0;
@@ -5551,7 +5551,7 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
                     if (!um.isAbundant && !um.isShort){
 
                         um.dist += um.strand;
-                        if ((um.dist != 0) && (um.dist != um.size - k_ + 1)) kht.insert(um.getUnitigHead(), vector<size_t>()).first->push_back(um.dist);
+                        if ((um.dist != 0) && (um.dist != um.size - k_ + 1)) kht.insert(um.getUnitigHead(), std::vector<size_t>()).first->push_back(um.dist);
                     }
                 }
             }
@@ -5565,7 +5565,7 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
                     if (!um.isAbundant && !um.isShort){
 
                         um.dist += !um.strand;
-                        if ((um.dist != 0) && (um.dist != um.size - k_ + 1)) kht.insert(um.getUnitigHead(), vector<size_t>()).first->push_back(um.dist);
+                        if ((um.dist != 0) && (um.dist != um.size - k_ + 1)) kht.insert(um.getUnitigHead(), std::vector<size_t>()).first->push_back(um.dist);
                     }
                 }
             }
@@ -5592,13 +5592,13 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
 
             if ((p.second == 0) && !cm.isAbundant && !cm.isShort){
 
-                if ((cm.dist != 0) && (cm.dist != cm.size - k_ + 1)) kht.insert(cm.getUnitigHead(), vector<size_t>()).first->push_back(cm.dist);
+                if ((cm.dist != 0) && (cm.dist != cm.size - k_ + 1)) kht.insert(cm.getUnitigHead(), std::vector<size_t>()).first->push_back(cm.dist);
             }
             else if ((p.second + cm.len == str_seq_len - k_ + 1) && !cm.isAbundant && !cm.isShort){
 
                 cm.dist += cm.len;
 
-                if ((cm.dist != 0) && (cm.dist != cm.size - k_ + 1)) kht.insert(cm.getUnitigHead(), vector<size_t>()).first->push_back(cm.dist);
+                if ((cm.dist != 0) && (cm.dist != cm.size - k_ + 1)) kht.insert(cm.getUnitigHead(), std::vector<size_t>()).first->push_back(cm.dist);
             }
 
             it_km += cm.len;
@@ -5619,30 +5619,30 @@ bool CompactedDBG<U, G>::mergeUnitig(const string& seq, const bool verbose){
     if (nxt_pos_insert_v_unitigs < v_unitigs.size()) v_unitigs.resize(nxt_pos_insert_v_unitigs);
     if (v_kmers_sz < km_unitigs.size()) km_unitigs.resize(v_kmers_sz);
 
-    const size_t joined = joinUnitigs_<is_void<U>::value>(&v_joins);
+    const size_t joined = joinUnitigs_<std::is_void<U>::value>(&v_joins);
 
     if (verbose){
 
-        cout << "CompactedDBG::mergeUnitig(): Added " << added << " new unitigs to the graph." << endl;
-        cout << "CompactedDBG::mergeUnitig(): Split " << split_before << " unitigs into " << split_after << " new unitigs." << endl;
-        cout << "CompactedDBG::mergeUnitig(): Joined " << joined << " unitigs from the graph." << endl;
+        std::cout << "CompactedDBG::mergeUnitig(): Added " << added << " new unitigs to the graph." << std::endl;
+        std::cout << "CompactedDBG::mergeUnitig(): Split " << split_before << " unitigs into " << split_after << " new unitigs." << std::endl;
+        std::cout << "CompactedDBG::mergeUnitig(): Joined " << joined << " unitigs from the graph." << std::endl;
     }
 
     return true;
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, const bool verbose){
+bool CompactedDBG<U, G>::annotateSplitUnitig(const std::string& seq, const bool verbose){
 
     if (invalid){
 
-        cerr << "CompactedDBG::annotateSplitUnitig(): Graph is invalid and no sequence can be added to it" << endl;
+        std::cerr << "CompactedDBG::annotateSplitUnitig(): Graph is invalid and no sequence can be added to it" << std::endl;
         return false;
     }
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::annotateSplitUnitig(): Input sequence length cannot be less than k = " << k_ << endl;
+        std::cerr << "CompactedDBG::annotateSplitUnitig(): Input sequence length cannot be less than k = " << k_ << std::endl;
         return false;
     }
 
@@ -5656,13 +5656,13 @@ bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, const bool verbo
 
     bool prev_found = true;
 
-    string curr_unitig;
+    std::string curr_unitig;
 
     const char* str_seq = seq.c_str();
 
     const size_t str_seq_len = seq.length();
 
-    auto add_graph_function = [&](const string& unitig){
+    auto add_graph_function = [&](const std::string& unitig){
 
         const char* str_unitig = unitig.c_str();
         const size_t len_unitig = unitig.length();
@@ -5688,8 +5688,8 @@ bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, const bool verbo
 
         if (cm.isEmpty){
 
-            vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
-            vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
+            std::vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
+            std::vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
 
             nb_curr_pred = 0;
             nb_curr_succ = 0;
@@ -5786,17 +5786,17 @@ bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, const bool verbo
 }
 
 template<typename U, typename G>
-bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, LockGraph& lck_g, const bool verbose){
+bool CompactedDBG<U, G>::annotateSplitUnitig(const std::string& seq, LockGraph& lck_g, const bool verbose){
 
     if (invalid){
 
-        cerr << "CompactedDBG::annotateSplitUnitig(): Graph is invalid and no sequence can be added to it" << endl;
+        std::cerr << "CompactedDBG::annotateSplitUnitig(): Graph is invalid and no sequence can be added to it" << std::endl;
         return false;
     }
 
     if (seq.length() < k_){
 
-        cerr << "CompactedDBG::annotateSplitUnitig(): Input sequence length cannot be less than k = " << k_ << endl;
+        std::cerr << "CompactedDBG::annotateSplitUnitig(): Input sequence length cannot be less than k = " << k_ << std::endl;
         return false;
     }
 
@@ -5807,13 +5807,13 @@ bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, LockGraph& lck_g
 
     bool prev_found = true;
 
-    string curr_unitig;
+    std::string curr_unitig;
 
     const char* str_seq = seq.c_str();
 
     const size_t str_seq_len = seq.length();
 
-    auto add_graph_function = [&](const string& unitig){
+    auto add_graph_function = [&](const std::string& unitig){
 
         const char* str_unitig = unitig.c_str();
         const size_t len_unitig = unitig.length();
@@ -5845,8 +5845,8 @@ bool CompactedDBG<U, G>::annotateSplitUnitig(const string& seq, LockGraph& lck_g
 
         if (cm.isEmpty){
 
-            vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
-            vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
+            std::vector<UnitigMap<U, G>> um_bw(findPredecessors(p.first));
+            std::vector<UnitigMap<U, G>> um_fw(findSuccessors(p.first));
 
             nb_curr_pred = 0;
             nb_curr_succ = 0;
@@ -6009,7 +6009,7 @@ typename std::enable_if<!is_void, void>::type CompactedDBG<U, G>::deleteUnitig_(
         size_t pos_id_unitig = id_unitig << 32;
         const size_t mask = MASK_CONTIG_ID | MASK_CONTIG_TYPE;
 
-        string str;
+        std::string str;
 
         if (isShort){
 
@@ -6169,7 +6169,7 @@ typename std::enable_if<is_void, void>::type CompactedDBG<U, G>::deleteUnitig_( 
         size_t pos_id_unitig = id_unitig << 32;
         const size_t mask = MASK_CONTIG_ID | MASK_CONTIG_TYPE;
 
-        string str;
+        std::string str;
 
         if (isShort){
 
@@ -6264,7 +6264,7 @@ typename std::enable_if<is_void, void>::type CompactedDBG<U, G>::deleteUnitig_( 
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::deleteUnitig_(const bool isShort, const bool isAbundant, const size_t id_unitig, const string& str){
+void CompactedDBG<U, G>::deleteUnitig_(const bool isShort, const bool isAbundant, const size_t id_unitig, const std::string& str){
 
     const char* s = str.c_str();
     const size_t len = str.size();
@@ -6385,7 +6385,7 @@ void CompactedDBG<U, G>::deleteUnitig_(const bool isShort, const bool isAbundant
 template<typename U, typename G>
 template<bool is_void>
 typename std::enable_if<!is_void, bool>::type CompactedDBG<U, G>::extractUnitig_(size_t& pos_v_unitigs, size_t& nxt_pos_insert_v_unitigs,
-                                                                               size_t& v_unitigs_sz, size_t& v_kmers_sz, const vector<pair<int,int>>& sp){
+                                                                               size_t& v_unitigs_sz, size_t& v_kmers_sz, const std::vector<std::pair<int,int>>& sp){
 
     bool deleted = true;
 
@@ -6398,24 +6398,24 @@ typename std::enable_if<!is_void, bool>::type CompactedDBG<U, G>::extractUnitig_
         //const size_t totalcoverage = unitig->coveragesum - lowpair.second;
         //const size_t ccov_size = unitig->ccov.size();
 
-        const string str = unitig->getSeq().toString();
+        const std::string str = unitig->getSeq().toString();
 
         size_t i = 0;
 
         UnitigMap<U, G> um(pos_v_unitigs, 0, 0, unitig->length(), false, false, true, this);
 
-        vector<Unitig<U>> v_data(sp.size());
+        std::vector<Unitig<U>> v_data(sp.size());
 
         deleted = false;
 
-        for (vector<pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit, ++i) { //Iterate over created split unitigs
+        for (std::vector<std::pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit, ++i) { //Iterate over created split unitigs
 
             um.dist = sit->first;
             um.len = sit->second - um.dist;
 
             if (um.len == 1){
 
-                const string split_str = str.substr(um.dist, um.len + k_ - 1);
+                const std::string split_str = str.substr(um.dist, um.len + k_ - 1);
 
                 um.strand = (split_str <= reverse_complement(split_str));
             }
@@ -6426,17 +6426,17 @@ typename std::enable_if<!is_void, bool>::type CompactedDBG<U, G>::extractUnitig_
 
         i = 0;
 
-        for (vector<pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit, ++i) { //Iterate over created split unitigs
+        for (std::vector<std::pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit, ++i) { //Iterate over created split unitigs
 
             const size_t len = sit->second - sit->first;
             //const uint64_t cov_tmp = (totalcoverage * len) / (ccov_size - lowpair.first); // Split unitig coverage
             const uint64_t cov_tmp = len * CompressedCoverage::getFullCoverage();
 
-            string split_str = str.substr(sit->first, len + k_ - 1); // Split unitig sequence
+            std::string split_str = str.substr(sit->first, len + k_ - 1); // Split unitig sequence
 
             if (len == 1){
 
-                const string split_str_rev = reverse_complement(split_str);
+                const std::string split_str_rev = reverse_complement(split_str);
 
                 if (split_str > split_str_rev) split_str = split_str_rev;
 
@@ -6493,7 +6493,7 @@ typename std::enable_if<!is_void, bool>::type CompactedDBG<U, G>::extractUnitig_
 template<typename U, typename G>
 template<bool is_void>
 typename std::enable_if<is_void, bool>::type CompactedDBG<U, G>::extractUnitig_(size_t& pos_v_unitigs, size_t& nxt_pos_insert_v_unitigs,
-                                                                              size_t& v_unitigs_sz, size_t& v_kmers_sz, const vector<pair<int,int>>& sp){
+                                                                              size_t& v_unitigs_sz, size_t& v_kmers_sz, const std::vector<std::pair<int,int>>& sp){
 
     bool deleted = true;
 
@@ -6506,16 +6506,16 @@ typename std::enable_if<is_void, bool>::type CompactedDBG<U, G>::extractUnitig_(
         //const size_t totalcoverage = unitig->coveragesum - lowpair.second;
         //const size_t ccov_size = unitig->ccov.size();
 
-        const string str = unitig->getSeq().toString();
+        const std::string str = unitig->getSeq().toString();
 
         deleted = false;
 
-        for (vector<pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit) { //Iterate over created split unitigs
+        for (std::vector<std::pair<int,int>>::const_iterator sit = sp.begin(); sit != sp.end(); ++sit) { //Iterate over created split unitigs
 
             const size_t len = sit->second - sit->first;
             //const uint64_t cov_tmp = (totalcoverage * len) / (ccov_size - lowpair.first); // Split unitig coverage
             const uint64_t cov_tmp = len * CompressedCoverage::getFullCoverage();
-            const string split_str = str.substr(sit->first, len + k_ - 1); // Split unitig sequence
+            const std::string split_str = str.substr(sit->first, len + k_ - 1); // Split unitig sequence
 
             if (len == 1){
 
@@ -6669,7 +6669,7 @@ UnitigMap<U, G> CompactedDBG<U, G>::find(const Kmer& km, const preAllocMinHashIt
 // post: All unitigs have a per k-mer coverage of CompressedCoverage::getFullCoverage(). The graph is not
 //       necessarily compacted after calling this function.
 template<typename U, typename G>
-pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
+std::pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
 
     size_t i;
     size_t split = 0, deleted = 0;
@@ -6681,7 +6681,7 @@ pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
 
         if (!it->ccov.isFull()){
 
-            deleteUnitig_<is_void<U>::value>(false, true, it.getHash());
+            deleteUnitig_<std::is_void<U>::value>(false, true, it.getHash());
             ++deleted;
         }
     }
@@ -6694,7 +6694,7 @@ pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
 
             if (i != v_kmers_sz) swapUnitigs(true, i, v_kmers_sz);
 
-            deleteUnitig_<is_void<U>::value>(true, false, v_kmers_sz);
+            deleteUnitig_<std::is_void<U>::value>(true, false, v_kmers_sz);
 
             ++deleted;
         }
@@ -6705,9 +6705,9 @@ pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
 
         if (!v_unitigs[i]->getCov().isFull()) { //Coverage not full, unitig must be splitted
 
-            vector<pair<int,int>> sp = v_unitigs[i]->getCov().splittingVector();
+            std::vector<std::pair<int,int>> sp = v_unitigs[i]->getCov().splittingVector();
 
-            if (extractUnitig_<is_void<U>::value>(i, nxt_pos_insert, v_unitigs_sz, v_kmers_sz, sp)) ++deleted;
+            if (extractUnitig_<std::is_void<U>::value>(i, nxt_pos_insert, v_unitigs_sz, v_kmers_sz, sp)) ++deleted;
             else {
 
                 ++split;
@@ -6728,9 +6728,9 @@ pair<size_t, size_t> CompactedDBG<U, G>::extractAllUnitigs() {
 // post: All unitigs have a per k-mer coverage of CompressedCoverage::getFullCoverage(). The graph is not
 //       necessarily compacted after calling this function.
 template<typename U, typename G>
-pair<size_t, size_t> CompactedDBG<U, G>::splitAllUnitigs() {
+std::pair<size_t, size_t> CompactedDBG<U, G>::splitAllUnitigs() {
 
-    pair<size_t, size_t> p = {0, 0};
+    std::pair<size_t, size_t> p = {0, 0};
 
     size_t v_kmers_sz = km_unitigs.size();
     size_t v_unitigs_sz = v_unitigs.size();
@@ -6746,7 +6746,7 @@ pair<size_t, size_t> CompactedDBG<U, G>::splitAllUnitigs() {
 
             size_t prev_split_pos = 0;
 
-            vector<pair<int,int>> sp;
+            std::vector<std::pair<int,int>> sp;
 
             for (size_t pos = 0; pos < ccov.size(); ++pos){
 
@@ -6764,7 +6764,7 @@ pair<size_t, size_t> CompactedDBG<U, G>::splitAllUnitigs() {
             ++(p.second);
             ++(p.first);
 
-            extractUnitig_<is_void<U>::value>(i, nxt_pos_insert, v_unitigs_sz, v_kmers_sz, sp);
+            extractUnitig_<std::is_void<U>::value>(i, nxt_pos_insert, v_unitigs_sz, v_kmers_sz, sp);
         }
         else ++i;
     }
@@ -6776,9 +6776,9 @@ pair<size_t, size_t> CompactedDBG<U, G>::splitAllUnitigs() {
 }
 
 template<typename U, typename G>
-pair<size_t, size_t> CompactedDBG<U, G>::getSplitInfoAllUnitigs() const {
+std::pair<size_t, size_t> CompactedDBG<U, G>::getSplitInfoAllUnitigs() const {
 
-    pair<size_t, size_t> p = {0, 0};
+    std::pair<size_t, size_t> p = {0, 0};
 
     const size_t cov_full = CompressedCoverage::getFullCoverage();
 
@@ -6809,7 +6809,7 @@ pair<size_t, size_t> CompactedDBG<U, G>::getSplitInfoAllUnitigs() const {
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>& joins, const size_t nb_threads) const {
+void CompactedDBG<U, G>::createJoinHT(std::vector<Kmer>* v_joins, KmerHashTable<Kmer>& joins, const size_t nb_threads) const {
 
     const size_t v_unitigs_size = v_unitigs.size();
     const size_t v_kmers_size = km_unitigs.size();
@@ -6936,8 +6936,8 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                 }
             };
 
-            auto worker_v_unitigs = [&joins, &lck, this](   typename vector<Unitig<U>*>::const_iterator a,
-                                                            typename vector<Unitig<U>*>::const_iterator b){
+            auto worker_v_unitigs = [&joins, &lck, this](   typename std::vector<Unitig<U>*>::const_iterator a,
+                                                            typename std::vector<Unitig<U>*>::const_iterator b){
 
                 for (size_t i = a - v_unitigs.begin(), end = b - v_unitigs.begin(); i != end; ++i) {
 
@@ -6976,9 +6976,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
             {
                 typename h_kmers_ccov_t::const_iterator it = h_kmers_ccov.begin(), it_end = h_kmers_ccov.end();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it;
+                std::mutex mutex_it;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -6993,7 +6993,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it);
+                                    std::unique_lock<std::mutex> lock(mutex_it);
 
                                     l_it = it;
 
@@ -7016,9 +7016,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
 
                 size_t it_km = 0, it_km_end = km_unitigs.size();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it_km;
+                std::mutex mutex_it_km;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7031,12 +7031,12 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it_km);
+                                    std::unique_lock<std::mutex> lock(mutex_it_km);
 
                                     if (it_km == it_km_end) return;
 
                                     l_it_km = it_km;
-                                    it_km = min(it_km + chunk, it_km_end);
+                                    it_km = std::min(it_km + chunk, it_km_end);
                                     l_it_km_end = it_km;
                                 }
 
@@ -7053,9 +7053,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                 auto it_unitig = v_unitigs.begin();
                 auto it_unitig_end = v_unitigs.end();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it_unitig;
+                std::mutex mutex_it_unitig;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7069,7 +7069,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it_unitig);
+                                    std::unique_lock<std::mutex> lock(mutex_it_unitig);
 
                                     if (it_unitig == it_unitig_end) return;
 
@@ -7128,7 +7128,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<Kmer>
 }
 
 template<typename U, typename G>
-void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>& joins, const size_t nb_threads) const {
+void CompactedDBG<U, G>::createJoinHT(std::vector<Kmer>* v_joins, KmerHashTable<char>& joins, const size_t nb_threads) const {
 
     const size_t v_unitigs_size = v_unitigs.size();
     const size_t v_kmers_size = km_unitigs.size();
@@ -7255,8 +7255,8 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
                 }
             };
 
-            auto worker_v_unitigs = [&joins, &lck, this](   typename vector<Unitig<U>*>::const_iterator a,
-                                                            typename vector<Unitig<U>*>::const_iterator b){
+            auto worker_v_unitigs = [&joins, &lck, this](   typename std::vector<Unitig<U>*>::const_iterator a,
+                                                            typename std::vector<Unitig<U>*>::const_iterator b){
 
                 for (size_t i = a - v_unitigs.begin(), end = b - v_unitigs.begin(); i != end; ++i) {
 
@@ -7295,9 +7295,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
             {
                 typename h_kmers_ccov_t::const_iterator it = h_kmers_ccov.begin(), it_end = h_kmers_ccov.end();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it;
+                std::mutex mutex_it;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7312,7 +7312,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it);
+                                    std::unique_lock<std::mutex> lock(mutex_it);
 
                                     l_it = it;
 
@@ -7335,9 +7335,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
 
                 size_t it_km = 0, it_km_end = km_unitigs.size();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it_km;
+                std::mutex mutex_it_km;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7350,12 +7350,12 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it_km);
+                                    std::unique_lock<std::mutex> lock(mutex_it_km);
 
                                     if (it_km == it_km_end) return;
 
                                     l_it_km = it_km;
-                                    it_km = min(it_km + chunk, it_km_end);
+                                    it_km = std::min(it_km + chunk, it_km_end);
                                     l_it_km_end = it_km;
                                 }
 
@@ -7372,9 +7372,9 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
                 auto it_unitig = v_unitigs.begin();
                 auto it_unitig_end = v_unitigs.end();
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+                std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-                mutex mutex_it_unitig;
+                std::mutex mutex_it_unitig;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7388,7 +7388,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it_unitig);
+                                    std::unique_lock<std::mutex> lock(mutex_it_unitig);
 
                                     if (it_unitig == it_unitig_end) return;
 
@@ -7452,7 +7452,7 @@ void CompactedDBG<U, G>::createJoinHT(vector<Kmer>* v_joins, KmerHashTable<char>
 //       joined is the number of joined unitigs
 template<typename U, typename G>
 template<bool is_void>
-typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads) {
+typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(std::vector<Kmer>* v_joins, const size_t nb_threads) {
 
     size_t joined = 0;
     size_t cov_full = CompressedCoverage::getFullCoverage();
@@ -7508,15 +7508,15 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
                 else continue;
 
                 //Compute join sequence
-                string joinSeq;
+                std::string joinSeq;
 
                 joinSeq.reserve((len_k_head ? k_ : cmHead.size) + (len_k_tail ? k_ : cmTail.size) - k_ + 1);
 
                 if (headDir) joinSeq = len_k_head ? cmHead_head.toString() : v_unitigs[cmHead.pos_unitig]->getSeq().toString();
                 else joinSeq = len_k_head ? cmHead_head.twin().toString() : v_unitigs[cmHead.pos_unitig]->getSeq().rev().toString();
 
-                if (tailDir) joinSeq.append(len_k_tail ? cmTail_head.toString() : v_unitigs[cmTail.pos_unitig]->getSeq().toString(), k_ - 1, string::npos);
-                else joinSeq.append(len_k_tail ? cmTail_head.twin().toString() : v_unitigs[cmTail.pos_unitig]->getSeq().rev().toString(), k_ - 1, string::npos);
+                if (tailDir) joinSeq.append(len_k_tail ? cmTail_head.toString() : v_unitigs[cmTail.pos_unitig]->getSeq().toString(), k_ - 1, std::string::npos);
+                else joinSeq.append(len_k_tail ? cmTail_head.twin().toString() : v_unitigs[cmTail.pos_unitig]->getSeq().rev().toString(), k_ - 1, std::string::npos);
 
                 Unitig<U> data_tmp; //Store temporarily the new merged data
                 Unitig<U>* unitig; //New unitig
@@ -7629,7 +7629,7 @@ typename std::enable_if<!is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_
 
 template<typename U, typename G>
 template<bool is_void>
-typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(vector<Kmer>* v_joins, const size_t nb_threads) {
+typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(std::vector<Kmer>* v_joins, const size_t nb_threads) {
 
     size_t joined = 0;
     size_t cov_full = CompressedCoverage::getFullCoverage();
@@ -7685,15 +7685,15 @@ typename std::enable_if<is_void, size_t>::type CompactedDBG<U, G>::joinUnitigs_(
                 else continue;
 
                 //Compute join sequence
-                string joinSeq;
+                std::string joinSeq;
 
                 joinSeq.reserve((len_k_head ? k_ : cmHead.size) + (len_k_tail ? k_ : cmTail.size) - k_ + 1);
 
                 if (headDir) joinSeq = len_k_head ? cmHead_head.toString() : v_unitigs[cmHead.pos_unitig]->getSeq().toString();
                 else joinSeq = len_k_head ? cmHead_head.twin().toString() : v_unitigs[cmHead.pos_unitig]->getSeq().rev().toString();
 
-                if (tailDir) joinSeq.append(len_k_tail ? cmTail_head.toString() : v_unitigs[cmTail.pos_unitig]->getSeq().toString(), k_ - 1, string::npos);
-                else joinSeq.append(len_k_tail ? cmTail_head.twin().toString() : v_unitigs[cmTail.pos_unitig]->getSeq().rev().toString(), k_ - 1, string::npos);
+                if (tailDir) joinSeq.append(len_k_tail ? cmTail_head.toString() : v_unitigs[cmTail.pos_unitig]->getSeq().toString(), k_ - 1, std::string::npos);
+                else joinSeq.append(len_k_tail ? cmTail_head.twin().toString() : v_unitigs[cmTail.pos_unitig]->getSeq().rev().toString(), k_ - 1, std::string::npos);
 
                 Unitig<U>* unitig; //New unitig
 
@@ -7796,7 +7796,7 @@ bool CompactedDBG<U, G>::checkJoin(const Kmer& a, const const_UnitigMap<U, G>& c
 
     size_t i, j, count_succ;
 
-    vector<const_UnitigMap<U, G>> v_um(findSuccessors(a, 2, true));
+    std::vector<const_UnitigMap<U, G>> v_um(findSuccessors(a, 2, true));
 
     for (i = 0, count_succ = 0; i != 4; ++i){
 
@@ -7847,10 +7847,10 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
     size_t v_unitigs_sz = v_unitigs.size();
     size_t v_kmers_sz = km_unitigs.size();
 
-    vector<pair<int,int>> sp;
+    std::vector<std::pair<int,int>> sp;
 
-    vector<vector<Kmer>> vv_km(nb_threads);
-    vector<vector<uint16_t>> vv_pres_neigh(nb_threads);
+    std::vector<std::vector<Kmer>> vv_km(nb_threads);
+    std::vector<std::vector<uint16_t>> vv_pres_neigh(nb_threads);
 
     {
         const size_t nb_short_per_thread = (v_kmers_sz + nb_threads - 1) / nb_threads;
@@ -7859,9 +7859,9 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
         typename h_kmers_ccov_t::iterator its = h_kmers_ccov.begin();
         typename h_kmers_ccov_t::iterator ite = h_kmers_ccov.end();
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_it;
+        std::mutex mutex_it;
 
         for (size_t t = 0; t < nb_threads; ++t){
 
@@ -7872,13 +7872,13 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
                     typename h_kmers_ccov_t::iterator lits, lite;
 
                     const size_t pos_s = t * nb_short_per_thread;
-                    const size_t pos_e = min(v_kmers_sz, (t+1) * nb_short_per_thread);
+                    const size_t pos_e = std::min(v_kmers_sz, (t+1) * nb_short_per_thread);
 
-                    vector<Kmer>& v_km = vv_km[t];
-                    vector<uint16_t>& v_pres_neigh = vv_pres_neigh[t];
+                    std::vector<Kmer>& v_km = vv_km[t];
+                    std::vector<uint16_t>& v_pres_neigh = vv_pres_neigh[t];
 
                     {
-                        unique_lock<mutex> lock(mutex_it);
+                        std::unique_lock<std::mutex> lock(mutex_it);
 
                         lits = its;
 
@@ -7890,7 +7890,7 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
                     while (lits != lite) {
 
                         const Kmer& km = lits.getKey();
-                        const string km_str = km.toString();
+                        const std::string km_str = km.toString();
                         const uint64_t km_h = km.hash();
 
                         minHashIterator<RepHash> it_min(km_str.c_str(), km_str.length(), k_, g_, RepHash(), true);
@@ -7932,7 +7932,7 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
                     for (size_t pos = pos_s; pos < pos_e; ++pos) {
 
                         const Kmer& km = km_unitigs.getKmer(pos);
-                        const string km_str = km.toString();
+                        const std::string km_str = km.toString();
                         const uint64_t km_h = km.hash();
 
                         minHashIterator<RepHash> it_min(km_str.c_str(), km_str.length(), k_, g_, RepHash(), true);
@@ -7979,8 +7979,8 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
 
     for (size_t t = 0; t < nb_threads; ++t){
 
-        vector<Kmer>& v_km = vv_km[t];
-        vector<uint16_t>& v_pres_neigh = vv_pres_neigh[t];
+        std::vector<Kmer>& v_km = vv_km[t];
+        std::vector<uint16_t>& v_pres_neigh = vv_pres_neigh[t];
 
         for (size_t i = 0; i < v_km.size(); ++i) {
 
@@ -8005,10 +8005,10 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
 
                             if ((cm_bw.dist != 0) && (cm_bw.dist != cm_bw.size - k_ + 1)){
 
-                                sp.push_back(make_pair(0, cm_bw.dist));
-                                sp.push_back(make_pair(cm_bw.dist, cm_bw.size - k_ + 1));
+                                sp.push_back(std::make_pair(0, cm_bw.dist));
+                                sp.push_back(std::make_pair(cm_bw.dist, cm_bw.size - k_ + 1));
 
-                                extractUnitig_<is_void<U>::value>(cm_bw.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
+                                extractUnitig_<std::is_void<U>::value>(cm_bw.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
 
                                 sp.clear();
                             }
@@ -8030,10 +8030,10 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
 
                             if ((cm_fw.dist != 0) && (cm_fw.dist != cm_fw.size - k_ + 1)){
 
-                                sp.push_back(make_pair(0, cm_fw.dist));
-                                sp.push_back(make_pair(cm_fw.dist, cm_fw.size - k_ + 1));
+                                sp.push_back(std::make_pair(0, cm_fw.dist));
+                                sp.push_back(std::make_pair(cm_fw.dist, cm_fw.size - k_ + 1));
 
-                                extractUnitig_<is_void<U>::value>(cm_fw.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
+                                extractUnitig_<std::is_void<U>::value>(cm_fw.pos_unitig, nxt_pos_insert_v_unitigs, v_unitigs_sz, v_kmers_sz, sp);
 
                                 sp.clear();
                             }
@@ -8054,7 +8054,7 @@ void CompactedDBG<U, G>::check_fp_tips(BlockedBloomFilter& bf, const size_t nb_t
 }
 
 template<typename U, typename G>
-size_t CompactedDBG<U, G>::removeUnitigs(bool rmIsolated, bool clipTips, vector<Kmer>& v){
+size_t CompactedDBG<U, G>::removeUnitigs(bool rmIsolated, bool clipTips, std::vector<Kmer>& v){
 
     if (!rmIsolated && !clipTips) return 0;
 
@@ -8209,15 +8209,15 @@ size_t CompactedDBG<U, G>::removeUnitigs(bool rmIsolated, bool clipTips, vector<
         }
     }
 
-    for (j = v_unitigs_sz; j < v_unitigs.size(); ++j) deleteUnitig_<is_void<U>::value>(false, false, j);
+    for (j = v_unitigs_sz; j < v_unitigs.size(); ++j) deleteUnitig_<std::is_void<U>::value>(false, false, j);
     v_unitigs.resize(v_unitigs_sz);
 
-    for (j = v_kmers_sz; j < km_unitigs.size(); ++j) deleteUnitig_<is_void<U>::value>(true, false, j);
+    for (j = v_kmers_sz; j < km_unitigs.size(); ++j) deleteUnitig_<std::is_void<U>::value>(true, false, j);
     km_unitigs.resize(v_kmers_sz);
 
     for (typename h_kmers_ccov_t::iterator it = h_kmers_ccov.begin(); it != h_kmers_ccov.end(); ++it){
 
-        if (it->ccov.size() == 0) deleteUnitig_<is_void<U>::value>(false, true, it.getHash());
+        if (it->ccov.size() == 0) deleteUnitig_<std::is_void<U>::value>(false, true, it.getHash());
     }
 
     return removed;
@@ -8316,7 +8316,7 @@ void CompactedDBG<U, G>::unmapRead(const const_UnitigMap<U, G>& um, LockGraph& l
 }
 
 template<typename U, typename G>
-vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_uniq_km, const size_t nb_threads, const bool verbose) {
+std::vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_uniq_km, const size_t nb_threads, const bool verbose) {
 
     const size_t v_unitigs_sz = v_unitigs.size();
     const size_t v_kmers_sz = km_unitigs.size();
@@ -8327,13 +8327,13 @@ vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_
 
     KmerHashTable<uint8_t> tips;
 
-    vector<Kmer> v_out;
+    std::vector<Kmer> v_out;
 
     for (typename h_kmers_ccov_t::iterator it_ccov = h_kmers_ccov.begin(); it_ccov != h_kmers_ccov.end(); ++it_ccov) {
 
         const Kmer km = it_ccov.getKey().rep();
 
-        vector<UnitigMap<U, G>> v_um = findPredecessors(km, true);
+        std::vector<UnitigMap<U, G>> v_um = findPredecessors(km, true);
 
         for (i = 0; (i != 4) && v_um[i].isEmpty; ++i){}
 
@@ -8350,7 +8350,7 @@ vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_
 
         const Kmer km = km_unitigs.getKmer(it_v_km).rep();
 
-        vector<UnitigMap<U, G>> v_um = findPredecessors(km, true);
+        std::vector<UnitigMap<U, G>> v_um = findPredecessors(km, true);
 
         for (i = 0; (i != 4) && v_um[i].isEmpty; ++i){}
 
@@ -8370,7 +8370,7 @@ vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_
         const Kmer head = seq.getKmer(0);
         const Kmer tail = seq.getKmer(seq.size() - k_);
 
-        vector<UnitigMap<U, G>> v_um = findPredecessors(head, true);
+        std::vector<UnitigMap<U, G>> v_um = findPredecessors(head, true);
 
         for (i = 0; (i != 4) && v_um[i].isEmpty; ++i){}
 
@@ -8526,17 +8526,17 @@ vector<Kmer> CompactedDBG<U, G>::extractMercyKmers(const BlockedBloomFilter& bf_
         }
     }
 
-    if (verbose) cout << "CompactedDBG::extractMercyKmers(): " << v_out.size() << " k-mers extracted" << endl;
+    if (verbose) std::cout << "CompactedDBG::extractMercyKmers(): " << v_out.size() << " k-mers extracted" << std::endl;
 
     return v_out;
 }
 
 template<typename U, typename G>
-size_t CompactedDBG<U, G>::joinTips(string filename_MBBF_uniq_kmers, const size_t nb_threads, const bool verbose) {
+size_t CompactedDBG<U, G>::joinTips(std::string filename_MBBF_uniq_kmers, const size_t nb_threads, const bool verbose) {
 
     if (invalid){
 
-        cerr << "CompactedDBG::joinTips(): Graph is invalid and tips cannot be joined" << endl;
+        std::cerr << "CompactedDBG::joinTips(): Graph is invalid and tips cannot be joined" << std::endl;
         return 0;
     }
 
@@ -8546,7 +8546,7 @@ size_t CompactedDBG<U, G>::joinTips(string filename_MBBF_uniq_kmers, const size_
 
     if ((f_mbbf = fopen(filename_MBBF_uniq_kmers.c_str(), "rb")) == NULL){
 
-        cerr << "CompactedDBG::joinTips(): Minimizer Blocked Bloom filter file of unique k-mers cannot be opened" << endl;
+        std::cerr << "CompactedDBG::joinTips(): Minimizer Blocked Bloom filter file of unique k-mers cannot be opened" << std::endl;
         return 0;
     }
 
@@ -8554,13 +8554,13 @@ size_t CompactedDBG<U, G>::joinTips(string filename_MBBF_uniq_kmers, const size_
 
     fclose(f_mbbf);
 
-    vector<Kmer> v_mercy_km = extractMercyKmers(mbbf, nb_threads, verbose);
+    std::vector<Kmer> v_mercy_km = extractMercyKmers(mbbf, nb_threads, verbose);
 
     for (const auto& km_mercy : v_mercy_km) addUnitig(km_mercy.rep().toString(), km_unitigs.size());
 
-    size_t nb_join = joinUnitigs_<is_void<U>::value>(&v_mercy_km, nb_threads);
+    size_t nb_join = joinUnitigs_<std::is_void<U>::value>(&v_mercy_km, nb_threads);
 
-    if (verbose) cout << "CompactedDBG<U, G>::joinTips(): " << nb_join << " unitigs have been joined using mercy k-mers" << endl;
+    if (verbose) std::cout << "CompactedDBG<U, G>::joinTips(): " << nb_join << " unitigs have been joined using mercy k-mers" << std::endl;
 
     return nb_join;
 }
@@ -8572,31 +8572,31 @@ void CompactedDBG<U, G>::setKmerGmerLength(const int kmer_length, const int mini
 
     if (kmer_length <= 2){
 
-        cerr << "CompactedDBG::CompactedDBG(): Length k of k-mers cannot be less than 3" << endl;
+        std::cerr << "CompactedDBG::CompactedDBG(): Length k of k-mers cannot be less than 3" << std::endl;
         invalid = true;
     }
 
     if (kmer_length >= MAX_KMER_SIZE){
 
-        cerr << "CompactedDBG::CompactedDBG(): Length k of k-mers cannot exceed or be equal to " << MAX_KMER_SIZE << endl;
+        std::cerr << "CompactedDBG::CompactedDBG(): Length k of k-mers cannot exceed or be equal to " << MAX_KMER_SIZE << std::endl;
         invalid = true;
     }
 
     if (minimizer_length == 0){
 
-        cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot be equal to 0" << endl;
+        std::cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot be equal to 0" << std::endl;
         invalid = true;
     }
 
     if (minimizer_length >= MAX_GMER_SIZE){
 
-        cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot exceed or be equal to " << MAX_KMER_SIZE << endl;
+        std::cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot exceed or be equal to " << MAX_KMER_SIZE << std::endl;
         invalid = true;
     }
 
     if ((minimizer_length > 0) && (minimizer_length > kmer_length - 2)){
 
-        cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot exceed k - 2" << endl;
+        std::cerr << "CompactedDBG::CompactedDBG(): Length g of minimizers cannot exceed k - 2" << std::endl;
         invalid = true;
     }
 
@@ -8627,10 +8627,10 @@ void CompactedDBG<U, G>::setFullCoverage(const size_t cov) const {
 template<typename U, typename G>
 void CompactedDBG<U, G>::print() const {
 
-    cout << "CompactedDBG::print(): v_unitigs.size() = " << v_unitigs.size() << endl;
-    cout << "CompactedDBG::print(): v_kmers.size() = " << km_unitigs.size() << endl;
-    cout << "CompactedDBG::print(): h_kmers_ccov.size() = " << h_kmers_ccov.size() << endl;
-    cout << "CompactedDBG::print(): hmap_min_unitigs.size() = " << hmap_min_unitigs.size() << endl;
+    std::cout << "CompactedDBG::print(): v_unitigs.size() = " << v_unitigs.size() << std::endl;
+    std::cout << "CompactedDBG::print(): v_kmers.size() = " << km_unitigs.size() << std::endl;
+    std::cout << "CompactedDBG::print(): h_kmers_ccov.size() = " << h_kmers_ccov.size() << std::endl;
+    std::cout << "CompactedDBG::print(): hmap_min_unitigs.size() = " << hmap_min_unitigs.size() << std::endl;
 }
 
 #endif

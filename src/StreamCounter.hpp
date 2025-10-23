@@ -107,7 +107,7 @@ class StreamCounter {
             e = e_;
             seed = seed_;
 
-            const size_t numcounts = max(static_cast<size_t>(48.0/(e*e) + 1), static_cast<size_t>(8192));
+            const size_t numcounts = std::max(static_cast<size_t>(48.0/(e*e) + 1), static_cast<size_t>(8192));
 
             sz = rndup((numcounts + countsPerLong - 1) / countsPerLong);
             mask = (sz * countsPerLong) - 1;

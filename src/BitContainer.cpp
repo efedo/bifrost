@@ -1,5 +1,7 @@
 #include "BitContainer.hpp"
 
+using namespace std;
+
 BitContainer::BitContainer() : setBits(localBitVector) {}
 
 BitContainer::BitContainer(const BitContainer& o) {
@@ -580,7 +582,7 @@ void BitContainer::remove(const size_t pair_id) {
 
                 setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
 
-                *this = move(new_uc);
+                *this = std::move(new_uc);
             }
             else setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
         }
@@ -630,7 +632,7 @@ void BitContainer::remove(const size_t pair_id) {
 
             for (; it != it_end; ++it) new_uc.add(*it);
 
-            *this = move(new_uc);
+            *this = std::move(new_uc);
         }
         else if ((setBits & flagMask) == ptrBitmap) bitmap->r.runOptimize();
     }
@@ -704,7 +706,7 @@ void BitContainer::removeSortedVector(const vector<uint32_t>& v) {
 
                 setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
 
-                *this = move(new_uc);
+                *this = std::move(new_uc);
             }
             else setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
         }
@@ -752,7 +754,7 @@ void BitContainer::removeSortedVector(const vector<uint32_t>& v) {
 
             for (const_iterator it = begin(), it_end = end(); it != it_end; ++it) new_uc.add(*it);
 
-            *this = move(new_uc);
+            *this = std::move(new_uc);
         }
         else if ((setBits & flagMask) == ptrBitmap) bitmap->r.runOptimize();
     }

@@ -188,7 +188,7 @@ class MinimizerIndex {
             return erase(it);
         }
 
-        pair<iterator, bool> insert(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
+        std::pair<iterator, bool> insert(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
 
         iterator begin();
         const_iterator begin() const;

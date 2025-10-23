@@ -11,7 +11,7 @@ template<typename U>
 ColoredCDBG<U>::ColoredCDBG(const ColoredCDBG& o) : CompactedDBG<DataAccessor<U>, DataStorage<U>>(o), invalid(o.invalid) {}
 
 template<typename U>
-ColoredCDBG<U>::ColoredCDBG(ColoredCDBG&& o) :  CompactedDBG<DataAccessor<U>, DataStorage<U>>(move(o)), invalid(o.invalid) {}
+ColoredCDBG<U>::ColoredCDBG(ColoredCDBG&& o) :  CompactedDBG<DataAccessor<U>, DataStorage<U>>(std::move(o)), invalid(o.invalid) {}
 
 template<typename U>
 void ColoredCDBG<U>::clear(){
@@ -37,7 +37,7 @@ ColoredCDBG<U>& ColoredCDBG<U>::operator=(ColoredCDBG&& o) {
 
     if (this != &o) {
 
-        CompactedDBG<DataAccessor<U>, DataStorage<U>>::operator=(move(o));
+        CompactedDBG<DataAccessor<U>, DataStorage<U>>::operator=(std::move(o));
 
         invalid = o.invalid;
 
@@ -72,7 +72,7 @@ bool ColoredCDBG<U>::operator==(const ColoredCDBG& o) const {
                 unitig_o.dist = 0;
                 unitig_o.len = unitig_o.size - k + 1;
 
-                const string unitig_o_str = unitig_o.strand ? unitig_o.referenceUnitigToString() : reverse_complement(unitig_o.referenceUnitigToString());
+                const std::string unitig_o_str = unitig_o.strand ? unitig_o.referenceUnitigToString() : reverse_complement(unitig_o.referenceUnitigToString());
 
                 if (unitig_o_str != unitig.referenceUnitigToString()) return false;
                 else {
@@ -108,25 +108,25 @@ bool ColoredCDBG<U>::merge(const ColoredCDBG& o, const size_t nb_threads, const 
 
     if (invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
     if (o.invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Graph to merge is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Graph to merge is invalid." << std::endl;
          ret = false;
     }
 
     if (this->getK() != o.getK()){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
          ret = false;
     }
 
     if (this == &o){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << std::endl;
          ret = false;
     }
 
@@ -141,19 +141,19 @@ bool ColoredCDBG<U>::merge(const ColoredCDBG& o, const size_t nb_threads, const 
         if (ret){
 
             const size_t sz_after = this->size();
-            const pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
+            const std::pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
 
             resizeDataUC(sz_after + (p1.second - p1.first), nb_threads);
 
-            const pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
+            const std::pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
             const size_t joined = (p1.second != 0) ? CompactedDBG<DataAccessor<U>, DataStorage<U>>::joinUnitigs() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << std::endl;
             }
 
             for (size_t i = 0; i < o.getNbColors(); ++i) this->getData()->color_names.push_back(o.getColorName(i));
@@ -172,25 +172,25 @@ bool ColoredCDBG<U>::merge(ColoredCDBG&& o, const size_t nb_threads, const bool 
 
     if (invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
     if (o.invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Graph to merge is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Graph to merge is invalid." << std::endl;
          ret = false;
     }
 
     if (this->getK() != o.getK()){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
          ret = false;
     }
 
     if (this == &o){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << std::endl;
          ret = false;
     }
 
@@ -205,24 +205,24 @@ bool ColoredCDBG<U>::merge(ColoredCDBG&& o, const size_t nb_threads, const bool 
         if (ret){
 
             const size_t sz_after = this->size();
-            const pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
+            const std::pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
 
             resizeDataUC(sz_after + (p1.second - p1.first), nb_threads);
 
-            const pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
+            const std::pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
             const size_t joined = (p1.second != 0) ? CompactedDBG<DataAccessor<U>, DataStorage<U>>::joinUnitigs() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << std::endl;
             }
 
             for (size_t i = 0; i < o.getNbColors(); ++i) this->getData()->color_names.push_back(o.getColorName(i));
 
-            const bool ret = CompactedDBG<DataAccessor<U>, DataStorage<U>>::mergeData(move(o), nb_threads, verbose);
+            const bool ret = CompactedDBG<DataAccessor<U>, DataStorage<U>>::mergeData(std::move(o), nb_threads, verbose);
 
             o.clear();
 
@@ -234,13 +234,13 @@ bool ColoredCDBG<U>::merge(ColoredCDBG&& o, const size_t nb_threads, const bool 
 }
 
 template<typename U>
-bool ColoredCDBG<U>::merge(const vector<ColoredCDBG>& v, const size_t nb_threads, const bool verbose){
+bool ColoredCDBG<U>::merge(const std::vector<ColoredCDBG>& v, const size_t nb_threads, const bool verbose){
 
     bool ret = true;
 
     if (invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
@@ -248,19 +248,19 @@ bool ColoredCDBG<U>::merge(const vector<ColoredCDBG>& v, const size_t nb_threads
 
         if (ccdbg.invalid){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): One of the graph to merge is invalid." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): One of the graph to merge is invalid." << std::endl;
              ret = false;
         }
 
         if (this->getK() != ccdbg.getK()){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
              ret = false;
         }
 
         if (this == &ccdbg){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << std::endl;
              ret = false;
         }
     }
@@ -281,19 +281,19 @@ bool ColoredCDBG<U>::merge(const vector<ColoredCDBG>& v, const size_t nb_threads
         if (ret){
 
             const size_t sz_after = this->size();
-            const pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
+            const std::pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
 
             resizeDataUC(sz_after + (p1.second - p1.first), nb_threads);
 
-            const pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
+            const std::pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
             const size_t joined = (p1.second != 0) ? CompactedDBG<DataAccessor<U>, DataStorage<U>>::joinUnitigs() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << std::endl;
             }
 
             for (const auto& ccdbg : v){
@@ -311,13 +311,13 @@ bool ColoredCDBG<U>::merge(const vector<ColoredCDBG>& v, const size_t nb_threads
 }
 
 template<typename U>
-bool ColoredCDBG<U>::merge(vector<ColoredCDBG>&& v, const size_t nb_threads, const bool verbose){
+bool ColoredCDBG<U>::merge(std::vector<ColoredCDBG>&& v, const size_t nb_threads, const bool verbose){
 
     bool ret = true;
 
     if (invalid){
 
-         if (verbose) cerr << "ColoredCDBG::merge(): Current graph is invalid." << endl;
+         if (verbose) std::cerr << "ColoredCDBG::merge(): Current graph is invalid." << std::endl;
          ret = false;
     }
 
@@ -325,19 +325,19 @@ bool ColoredCDBG<U>::merge(vector<ColoredCDBG>&& v, const size_t nb_threads, con
 
         if (ccdbg.invalid){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): One of the graph to merge is invalid." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): One of the graph to merge is invalid." << std::endl;
              ret = false;
         }
 
         if (this->getK() != ccdbg.getK()){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): The graphs to merge do not have the same k-mer length." << std::endl;
              ret = false;
         }
 
         if (this == &ccdbg){
 
-             if (verbose) cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << endl;
+             if (verbose) std::cerr << "ColoredCDBG::merge(): Cannot merge graph with itself." << std::endl;
              ret = false;
         }
     }
@@ -358,26 +358,26 @@ bool ColoredCDBG<U>::merge(vector<ColoredCDBG>&& v, const size_t nb_threads, con
         if (ret){
 
             const size_t sz_after = this->size();
-            const pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
+            const std::pair<size_t, size_t> p1 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::getSplitInfoAllUnitigs();
 
             resizeDataUC(sz_after + (p1.second - p1.first), nb_threads);
 
-            const pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
+            const std::pair<size_t, size_t> p2 = CompactedDBG<DataAccessor<U>, DataStorage<U>>::splitAllUnitigs();
             const size_t joined = (p1.second != 0) ? CompactedDBG<DataAccessor<U>, DataStorage<U>>::joinUnitigs() : 0;
 
             if (verbose){
 
-                cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << endl;
-                cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << endl;
-                cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << endl;
+                std::cout << "CompactedDBG::merge(): Added " << (sz_after - sz_before) << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Split " << p1.first << " unitigs into " << p1.second << " new unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): Joined " << joined << " unitigs." << std::endl;
+                std::cout << "CompactedDBG::merge(): " << this->size() << " unitigs after merging." << std::endl;
             }
 
             for (auto& ccdbg : v){
 
                 for (size_t i = 0; i < ccdbg.getNbColors(); ++i) this->getData()->color_names.push_back(ccdbg.getColorName(i));
 
-                if (!CompactedDBG<DataAccessor<U>, DataStorage<U>>::mergeData(move(ccdbg), nb_threads, verbose)) return false;
+                if (!CompactedDBG<DataAccessor<U>, DataStorage<U>>::mergeData(std::move(ccdbg), nb_threads, verbose)) return false;
 
                 ccdbg.clear();
             }
@@ -398,7 +398,7 @@ bool ColoredCDBG<U>::buildGraph(const CCDBG_Build_opt& opt){
 
         invalid = !this->build(opt_);
     }
-    else cerr << "ColoredCDBG::buildGraph(): Graph is invalid and cannot be built." << endl;
+    else std::cerr << "ColoredCDBG::buildGraph(): Graph is invalid and cannot be built." << std::endl;
 
     return !invalid;
 }
@@ -411,13 +411,13 @@ bool ColoredCDBG<U>::buildColors(const CCDBG_Build_opt& opt){
         initUnitigColors(opt);
         buildUnitigColors(opt.nb_threads);
     }
-    else cerr << "ColoredCDBG::buildColors(): Graph is invalid (maybe not built yet?) and colors cannot be mapped." << endl;
+    else std::cerr << "ColoredCDBG::buildColors(): Graph is invalid (maybe not built yet?) and colors cannot be mapped." << std::endl;
 
     return !invalid;
 }
 
 template<typename U>
-bool ColoredCDBG<U>::write(const string& prefix_output_fn, const size_t nb_threads, const bool write_index_file, const bool compress_output, const bool verbose) const {
+bool ColoredCDBG<U>::write(const std::string& prefix_output_fn, const size_t nb_threads, const bool write_index_file, const bool compress_output, const bool verbose) const {
 
     if (!CompactedDBG<DataAccessor<U>, DataStorage<U>>::write(prefix_output_fn, nb_threads, true, false, false, write_index_file, compress_output, verbose)) return false; // Write graph
 
@@ -425,17 +425,17 @@ bool ColoredCDBG<U>::write(const string& prefix_output_fn, const size_t nb_threa
 }
 
 template<typename U>
-bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& input_colors_fn, const size_t nb_threads, const bool verbose) {
+bool ColoredCDBG<U>::loadColors(const std::string& input_graph_fn, const std::string& input_colors_fn, const size_t nb_threads, const bool verbose) {
 
     if (!this->getData()->read(input_colors_fn, nb_threads, verbose)) return false; // Read colors
 
-    if (verbose) cout << "ColoredCDBG::loadColors(): Joining unitigs to their color sets." << endl;
+    if (verbose) std::cout << "ColoredCDBG::loadColors(): Joining unitigs to their color sets." << std::endl;
 
     GFA_Parser graph(input_graph_fn);
 
     graph.open_read();
 
-    auto reading_function = [&graph](vector<pair<Kmer, uint8_t>>& unitig_tags, const size_t chunk_size) {
+    auto reading_function = [&graph](std::vector<std::pair<Kmer, uint8_t>>& unitig_tags, const size_t chunk_size) {
 
         size_t i = 0;
         size_t graph_file_id = 0;
@@ -450,7 +450,7 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
 
                 if (r.first->tags.empty()){
 
-                    cerr << "ColoredCDBG::loadColors(): One sequence line in GFA file has no DataAccessor tag. Operation aborted." << endl;
+                    std::cerr << "ColoredCDBG::loadColors(): One sequence line in GFA file has no DataAccessor tag. Operation aborted." << std::endl;
                     return false;
                 }
 
@@ -463,7 +463,7 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
 
                 if (i == r.first->tags.size()){
 
-                    cerr << "ColoredCDBG::loadColors(): One sequence line in GFA file has no DataAccessor tag. Operation aborted." << endl;
+                    std::cerr << "ColoredCDBG::loadColors(): One sequence line in GFA file has no DataAccessor tag. Operation aborted." << std::endl;
                     return false;
                 }
 
@@ -478,7 +478,7 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
         return ((r.first != nullptr) || (r.second != nullptr));
     };
 
-    auto join_function = [this](const vector<pair<Kmer, uint8_t>>& unitig_tags) {
+    auto join_function = [this](const std::vector<std::pair<Kmer, uint8_t>>& unitig_tags) {
 
         for (const auto& p : unitig_tags){
 
@@ -486,9 +486,9 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
 
             if (ucm.isEmpty){
 
-                cerr << "ColoredCDBG::loadColors(): Internal error, operation aborted." << endl;
-                cerr << "ColoredCDBG::loadColors(): A unitig from GFA file is not found in the in-memory graph." << endl;
-                cerr << "ColoredCDBG::loadColors(): Graph from GFA file possibly incorrectly compacted." << endl;
+                std::cerr << "ColoredCDBG::loadColors(): Internal error, operation aborted." << std::endl;
+                std::cerr << "ColoredCDBG::loadColors(): A unitig from GFA file is not found in the in-memory graph." << std::endl;
+                std::cerr << "ColoredCDBG::loadColors(): Graph from GFA file possibly incorrectly compacted." << std::endl;
 
                 return false;
             }
@@ -502,7 +502,7 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
                 UnitigColors* uc = da->getUnitigColors(ucm);
                 UnitigColors r_uc = uc->reverse(ucm);
 
-                *uc = move(r_uc);
+                *uc = std::move(r_uc);
             }
         }
 
@@ -512,9 +512,9 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
     {
         const size_t chunk = 10000;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
+        std::mutex mutex_file;
 
         bool file_valid_for_read = true;
 
@@ -524,12 +524,12 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
 
                 [&]{
 
-                    vector<pair<Kmer, uint8_t>> v;
+                    std::vector<std::pair<Kmer, uint8_t>> v;
 
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_file);
+                            std::unique_lock<std::mutex> lock(mutex_file);
 
                             if (!file_valid_for_read) return;
 
@@ -551,7 +551,7 @@ bool ColoredCDBG<U>::loadColors(const string& input_graph_fn, const string& inpu
 }
 
 template<typename U>
-bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_colors_fn, const size_t nb_threads, const bool verbose) {
+bool ColoredCDBG<U>::read(const std::string& input_graph_fn, const std::string& input_colors_fn, const size_t nb_threads, const bool verbose) {
 
     bool valid_input_files = true;
 
@@ -563,20 +563,20 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_colo
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::read(): Could not open input graph file " << input_graph_fn << endl;
+                std::cerr << "ColoredCDBG::read(): Could not open input graph file " << input_graph_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::read(): Input graph file " << input_graph_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::read(): Input graph file " << input_graph_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::read(): No input graph file provided." << endl;
+        std::cerr << "ColoredCDBG::read(): No input graph file provided." << std::endl;
         valid_input_files = false;
     }
 
@@ -588,31 +588,31 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_colo
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::read(): Could not open input colors file " << input_colors_fn << endl;
+                std::cerr << "ColoredCDBG::read(): Could not open input colors file " << input_colors_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::read(): Input colors file " << input_colors_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::read(): Input colors file " << input_colors_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::read(): No input colors file provided." << endl;
+        std::cerr << "ColoredCDBG::read(): No input colors file provided." << std::endl;
         valid_input_files = false;
     }
 
     if (valid_input_files){
 
-        if (verbose) cout << "ColoredCDBG::read(): Reading graph." << endl;
+        if (verbose) std::cout << "ColoredCDBG::read(): Reading graph." << std::endl;
         
         invalid = !CompactedDBG<DataAccessor<U>, DataStorage<U>>::read(input_graph_fn, nb_threads, verbose);
 
         if (invalid) return false; // Read graph
-        if (verbose) cout << "ColoredCDBG::read(): Reading colors." << endl;
+        if (verbose) std::cout << "ColoredCDBG::read(): Reading colors." << std::endl;
         
         invalid = !loadColors(input_graph_fn, input_colors_fn, nb_threads, verbose);
 
@@ -623,7 +623,7 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_colo
 }
 
 template<typename U>
-bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_index_fn, const string& input_colors_fn, const size_t nb_threads, const bool verbose) {
+bool ColoredCDBG<U>::read(const std::string& input_graph_fn, const std::string& input_index_fn, const std::string& input_colors_fn, const size_t nb_threads, const bool verbose) {
 
     bool valid_input_files = true;
 
@@ -635,20 +635,20 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_inde
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::read(): Could not open input graph file " << input_graph_fn << endl;
+                std::cerr << "ColoredCDBG::read(): Could not open input graph file " << input_graph_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::read(): Input graph file " << input_graph_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::read(): Input graph file " << input_graph_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::read(): No input graph file provided." << endl;
+        std::cerr << "ColoredCDBG::read(): No input graph file provided." << std::endl;
         valid_input_files = false;
     }
 
@@ -660,20 +660,20 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_inde
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::read(): Could not open input colors file " << input_colors_fn << endl;
+                std::cerr << "ColoredCDBG::read(): Could not open input colors file " << input_colors_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::read(): Input colors file " << input_colors_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::read(): Input colors file " << input_colors_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::read(): No input colors file provided." << endl;
+        std::cerr << "ColoredCDBG::read(): No input colors file provided." << std::endl;
         valid_input_files = false;
     }
 
@@ -685,31 +685,31 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_inde
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::read(): Could not open input index file " << input_index_fn << endl;
+                std::cerr << "ColoredCDBG::read(): Could not open input index file " << input_index_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::read(): Input index file " << input_index_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::read(): Input index file " << input_index_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::read(): No input index file provided." << endl;
+        std::cerr << "ColoredCDBG::read(): No input index file provided." << std::endl;
         valid_input_files = false;
     }
 
     if (valid_input_files){
 
-        if (verbose) cout << "ColoredCDBG::read(): Reading graph." << endl;
+        if (verbose) std::cout << "ColoredCDBG::read(): Reading graph." << std::endl;
         
         invalid = !CompactedDBG<DataAccessor<U>, DataStorage<U>>::read(input_graph_fn, input_index_fn, nb_threads, verbose);
 
         if (invalid) return false; // Read graph
-        if (verbose) cout << "ColoredCDBG::read(): Reading colors." << endl;
+        if (verbose) std::cout << "ColoredCDBG::read(): Reading colors." << std::endl;
         
         invalid = !loadColors(input_graph_fn, input_colors_fn, nb_threads, verbose);
 
@@ -720,7 +720,7 @@ bool ColoredCDBG<U>::read(const string& input_graph_fn, const string& input_inde
 }
 
 template<typename U>
-bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const size_t nb_threads, const bool verbose) {
+bool ColoredCDBG<U>::readGraph(const std::string& input_graph_fn, const size_t nb_threads, const bool verbose) {
 
     bool valid_input_files = true;
 
@@ -732,26 +732,26 @@ bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const size_t nb_thr
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::readGraph(): Could not open input graph file " << input_graph_fn << endl;
+                std::cerr << "ColoredCDBG::readGraph(): Could not open input graph file " << input_graph_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::readGraph(): Input graph file " << input_graph_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::readGraph(): Input graph file " << input_graph_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::readGraph(): No input graph file provided." << endl;
+        std::cerr << "ColoredCDBG::readGraph(): No input graph file provided." << std::endl;
         valid_input_files = false;
     }
 
     if (valid_input_files){
 
-        if (verbose) cout << "ColoredCDBG::readGraph(): Reading graph." << endl;
+        if (verbose) std::cout << "ColoredCDBG::readGraph(): Reading graph." << std::endl;
         
         invalid = !CompactedDBG<DataAccessor<U>, DataStorage<U>>::read(input_graph_fn, nb_threads, verbose);
 
@@ -762,7 +762,7 @@ bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const size_t nb_thr
 }
 
 template<typename U>
-bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const string& input_index_fn, const size_t nb_threads, const bool verbose) {
+bool ColoredCDBG<U>::readGraph(const std::string& input_graph_fn, const std::string& input_index_fn, const size_t nb_threads, const bool verbose) {
 
     bool valid_input_files = true;
 
@@ -774,20 +774,20 @@ bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const string& input
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::readGraph(): Could not open input graph file " << input_graph_fn << endl;
+                std::cerr << "ColoredCDBG::readGraph(): Could not open input graph file " << input_graph_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::readGraph(): Input graph file " << input_graph_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::readGraph(): Input graph file " << input_graph_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::readGraph(): No input graph file provided." << endl;
+        std::cerr << "ColoredCDBG::readGraph(): No input graph file provided." << std::endl;
         valid_input_files = false;
     }
 
@@ -799,26 +799,26 @@ bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const string& input
 
             if (fp == NULL) {
 
-                cerr << "ColoredCDBG::readGraph(): Could not open input index file " << input_index_fn << endl;
+                std::cerr << "ColoredCDBG::readGraph(): Could not open input index file " << input_index_fn << std::endl;
                 valid_input_files = false;
             }
             else fclose(fp);
         }
         else {
 
-            cerr << "ColoredCDBG::readGraph(): Input index file " << input_index_fn << " does not exist." << endl;
+            std::cerr << "ColoredCDBG::readGraph(): Input index file " << input_index_fn << " does not exist." << std::endl;
             valid_input_files = false;
         }
     }
     else {
 
-        cerr << "ColoredCDBG::readGraph(): No input index file provided." << endl;
+        std::cerr << "ColoredCDBG::readGraph(): No input index file provided." << std::endl;
         valid_input_files = false;
     }
 
     if (valid_input_files){
 
-        if (verbose) cout << "ColoredCDBG::readGraph(): Reading graph." << endl;
+        if (verbose) std::cout << "ColoredCDBG::readGraph(): Reading graph." << std::endl;
         
         invalid = !CompactedDBG<DataAccessor<U>, DataStorage<U>>::read(input_graph_fn, input_index_fn, nb_threads, verbose);
 
@@ -831,25 +831,25 @@ bool ColoredCDBG<U>::readGraph(const string& input_graph_fn, const string& input
 template<typename U>
 void ColoredCDBG<U>::initUnitigColors(const CCDBG_Build_opt& opt, const size_t max_nb_hash){
 
-    vector<string> v_files(opt.filename_seq_in);
+    std::vector<std::string> v_files(opt.filename_seq_in);
 
     v_files.insert(v_files.end(), opt.filename_ref_in.begin(), opt.filename_ref_in.end());
 
     DataStorage<U>* ds = this->getData();
     DataStorage<U> new_ds(max_nb_hash, this->size(), v_files);
 
-    *ds = move(new_ds);
+    *ds = std::move(new_ds);
 
     v_files.clear();
 
     const size_t chunk = 1000;
 
-    vector<thread> workers; // need to keep track of threads so we can join them
+    std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
     typename ColoredCDBG<U>::iterator g_a = this->begin();
     typename ColoredCDBG<U>::iterator g_b = this->end();
 
-    mutex mutex_it;
+    std::mutex mutex_it;
 
     for (size_t t = 0; t < opt.nb_threads; ++t){
 
@@ -862,7 +862,7 @@ void ColoredCDBG<U>::initUnitigColors(const CCDBG_Build_opt& opt, const size_t m
                 while (true) {
 
                     {
-                        unique_lock<mutex> lock(mutex_it);
+                        std::unique_lock<std::mutex> lock(mutex_it);
 
                         if (g_a == g_b) return;
 
@@ -885,7 +885,7 @@ void ColoredCDBG<U>::initUnitigColors(const CCDBG_Build_opt& opt, const size_t m
 
     for (auto& t : workers) t.join();
 
-    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << endl;
+    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << std::endl;
 }
 
 template<typename U>
@@ -897,12 +897,12 @@ void ColoredCDBG<U>::resizeDataUC(const size_t sz, const size_t nb_threads, cons
 
     const size_t chunk = 100;
 
-    vector<thread> workers; // need to keep track of threads so we can join them
+    std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
     typename ColoredCDBG<U>::iterator g_a = this->begin();
     typename ColoredCDBG<U>::iterator g_b = this->end();
 
-    mutex mutex_it;
+    std::mutex mutex_it;
 
     for (size_t t = 0; t < nb_threads; ++t){
 
@@ -915,7 +915,7 @@ void ColoredCDBG<U>::resizeDataUC(const size_t sz, const size_t nb_threads, cons
                 while (true) {
 
                     {
-                        unique_lock<mutex> lock(mutex_it);
+                        std::unique_lock<std::mutex> lock(mutex_it);
 
                         if (g_a == g_b) return;
 
@@ -934,12 +934,12 @@ void ColoredCDBG<U>::resizeDataUC(const size_t sz, const size_t nb_threads, cons
 
                         if ((uc != nullptr) || (data != nullptr)){
 
-                            const pair<DataAccessor<U>, pair<UnitigColors*, U*>> p  = new_ds.insert(*it_unitig);
+                            const std::pair<DataAccessor<U>, std::pair<UnitigColors*, U*>> p  = new_ds.insert(*it_unitig);
 
                             *(it_unitig->getData()) = p.first;
 
-                            if (uc != nullptr) *(p.second.first) = move(*uc);
-                            if (data != nullptr) *(p.second.second) = move(*data);
+                            if (uc != nullptr) *(p.second.first) = std::move(*uc);
+                            if (data != nullptr) *(p.second.second) = std::move(*data);
                         }
                     }
                 }
@@ -949,9 +949,9 @@ void ColoredCDBG<U>::resizeDataUC(const size_t sz, const size_t nb_threads, cons
 
     for (auto& t : workers) t.join();
 
-    *ds = move(new_ds);
+    *ds = std::move(new_ds);
 
-    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << endl;
+    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << std::endl;
 }
 
 template<>
@@ -963,12 +963,12 @@ inline void ColoredCDBG<void>::resizeDataUC(const size_t sz, const size_t nb_thr
 
     const size_t chunk = 100;
 
-    vector<thread> workers; // need to keep track of threads so we can join them
+    std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
     typename ColoredCDBG<void>::iterator g_a = this->begin();
     typename ColoredCDBG<void>::iterator g_b = this->end();
 
-    mutex mutex_it;
+    std::mutex mutex_it;
 
     for (size_t t = 0; t < nb_threads; ++t){
 
@@ -981,7 +981,7 @@ inline void ColoredCDBG<void>::resizeDataUC(const size_t sz, const size_t nb_thr
                 while (true) {
 
                     {
-                        unique_lock<mutex> lock(mutex_it);
+                        std::unique_lock<std::mutex> lock(mutex_it);
 
                         if (g_a == g_b) return;
 
@@ -999,7 +999,7 @@ inline void ColoredCDBG<void>::resizeDataUC(const size_t sz, const size_t nb_thr
 
                         if (uc != nullptr){
 
-                            const pair<DataAccessor<void>, pair<UnitigColors*, void*>> p  = new_ds.insert(*it_unitig);
+                            const std::pair<DataAccessor<void>, std::pair<UnitigColors*, void*>> p  = new_ds.insert(*it_unitig);
 
                             *(it_unitig->getData()) = p.first;
                             *(p.second.first) = std::move(*uc);
@@ -1014,7 +1014,7 @@ inline void ColoredCDBG<void>::resizeDataUC(const size_t sz, const size_t nb_thr
 
     *ds = std::move(new_ds);
 
-    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << endl;
+    //cout << "Number of unitigs not hashed is " << ds->overflow.size() << " on " << ds->nb_cs << " unitigs." << std::endl;
 }
 
 template<typename U>
@@ -1037,7 +1037,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
     bool next_file = true;
 
-    string s;
+    std::string s;
 
     FileParser fp(ds->color_names);
 
@@ -1061,7 +1061,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
             for (size_t i = 0; i < len - k_ + 1; i += max_len_seq - k_ + 1){
 
-                const int curr_len = min(len - i, max_len_seq);
+                const int curr_len = std::min(len - i, max_len_seq);
                 const char saved_char = str[i + curr_len];
                 const char* str_tmp = &str[i];
 
@@ -1170,9 +1170,9 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
     {
         bool stop = false;
 
-        vector<thread> workers; // need to keep track of threads so we can join them
+        std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-        mutex mutex_file;
+        std::mutex mutex_file;
 
         size_t prev_uc_sz = getCurrentRSS();
 
@@ -1194,7 +1194,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
                         while (true) {
 
                             {
-                                unique_lock<mutex> lock(mutex_file);
+                                std::unique_lock<std::mutex> lock(mutex_file);
 
                                 if (stop) {
 
@@ -1229,7 +1229,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
                 typename ColoredCDBG<U>::iterator g_a = this->begin();
                 typename ColoredCDBG<U>::iterator g_b = this->end();
 
-                mutex mutex_it;
+                std::mutex mutex_it;
 
                 for (size_t t = 0; t < nb_threads; ++t){
 
@@ -1242,7 +1242,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
                             while (true) {
 
                                 {
-                                    unique_lock<mutex> lock(mutex_it);
+                                    std::unique_lock<std::mutex> lock(mutex_it);
 
                                     if (g_a == g_b) return;
 
@@ -1283,7 +1283,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
     mutex mutex_u_map;
 
-    vector<thread> workers;
+    std::vector<std::thread> workers;
 
     auto add_hash_function = [&](typename ColoredCDBG<U>::iterator it_a, typename ColoredCDBG<U>::iterator it_b) {
 
@@ -1296,7 +1296,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
             if (uc_full_array[0].size() != 0){
 
-                const pair<int64_t, size_t> pv(0 - static_cast<int64_t>(uc_full_array[0].getSizeInBytes()) - static_cast<int64_t>(sizeof(size_t)), 0);
+                const std::pair<int64_t, size_t> pv(0 - static_cast<int64_t>(uc_full_array[0].getSizeInBytes()) - static_cast<int64_t>(sizeof(size_t)), 0);
 
                 const int64_t to_add = static_cast<int64_t>(uc->getSizeInBytes());
                 const int64_t to_rm = (static_cast<int64_t>(uc_full_array[1].getSizeInBytes() + 2 * sizeof(UnitigColors)));
@@ -1339,7 +1339,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
                     if (ds->shared_color_sets[id_shared].second == 0){
 
-                        ds->shared_color_sets[id_shared].first = move(uc_full_array[0]);
+                        ds->shared_color_sets[id_shared].first = std::move(uc_full_array[0]);
                         ds->shared_color_sets[id_shared].second = 0;
 
                         uc_full_array[0] = ds->shared_color_sets[id_shared];
@@ -1353,7 +1353,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 
                     cs_locks[id_lock].clear(std::memory_order_release);
 
-                    if (move_full) *uc = move(uc_full);
+                    if (move_full) *uc = std::move(uc_full);
                 }
             }
 
@@ -1367,7 +1367,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
         typename ColoredCDBG<U>::iterator g_a = this->begin();
         typename ColoredCDBG<U>::iterator g_b = this->end();
 
-        mutex mutex_it;
+        std::mutex mutex_it;
 
         for (size_t t = 0; t < nb_threads; ++t){
 
@@ -1380,7 +1380,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_it);
+                            std::unique_lock<std::mutex> lock(mutex_it);
 
                             if (g_a == g_b) return;
 
@@ -1420,7 +1420,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
         typename ColoredCDBG<U>::iterator g_a = this->begin();
         typename ColoredCDBG<U>::iterator g_b = this->end();
 
-        mutex mutex_it;
+        std::mutex mutex_it;
 
         for (size_t t = 0; t < nb_threads; ++t){
 
@@ -1433,7 +1433,7 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
                     while (true) {
 
                         {
-                            unique_lock<mutex> lock(mutex_it);
+                            std::unique_lock<std::mutex> lock(mutex_it);
 
                             if (g_a == g_b) return;
 
@@ -1460,65 +1460,65 @@ void ColoredCDBG<U>::buildUnitigColors(const size_t nb_threads){
 }
 
 template<typename U>
-string ColoredCDBG<U>::getColorName(const size_t color_id) const {
+std::string ColoredCDBG<U>::getColorName(const size_t color_id) const {
 
     if (invalid){
 
-        cerr << "ColoredCDBG::getColorName(): Graph is invalid or colors are not yet mapped to unitigs." << endl;
-        return string();
+        std::cerr << "ColoredCDBG::getColorName(): Graph is invalid or colors are not yet mapped to unitigs." << std::endl;
+        return std::string();
     }
 
     const DataStorage<U>* ds = this->getData();
 
     if (color_id >= ds->color_names.size()){
 
-        cerr << "ColoredCDBG::getColorName(): Color ID " << color_id << " is invalid, graph only has " <<
-        ds->color_names.size() << " colors." << endl;
+        std::cerr << "ColoredCDBG::getColorName(): Color ID " << color_id << " is invalid, graph only has " <<
+        ds->color_names.size() << " colors." << std::endl;
 
-        return string();
+        return std::string();
     }
 
     return ds->color_names[color_id];
 }
 
 template<typename U>
-vector<string> ColoredCDBG<U>::getColorNames() const {
+std::vector<std::string> ColoredCDBG<U>::getColorNames() const {
 
     if (invalid){
 
-        cerr << "ColoredCDBG::getColorNames(): Graph is invalid or colors are not yet mapped to unitigs." << endl;
-        return vector<string>();
+        std::cerr << "ColoredCDBG::getColorNames(): Graph is invalid or colors are not yet mapped to unitigs." << std::endl;
+        return std::vector<std::string>();
     }
 
     return this->getData()->color_names;
 }
 
 template<typename U>
-bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, const string& out_filename_prefix,
+bool ColoredCDBG<U>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
                                         const double min_ratio_kmers,
                                         const bool inexact_search, const bool files_as_queries,
                                         const size_t nb_threads, const bool verbose) const {
 
-    const string out_tmp = out_filename_prefix + ".tsv";
+    const std::string out_tmp = out_filename_prefix + ".tsv";
 
     {
         FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
 
         if (fp_tmp == NULL) {
 
-            cerr << "ColoredCDBG::searchMinRatioKmer(): Could not open file " << out_tmp << " for writing." << endl;
+            std::cerr << "ColoredCDBG::searchMinRatioKmer(): Could not open file " << out_tmp << " for writing." << std::endl;
             return false;
         }
         else {
 
             fclose(fp_tmp);
 
-            if (std::remove(out_tmp.c_str()) != 0) cerr << "ColoredCDBG::searchMinRatioKmer(): Could not remove temporary file " << out_tmp << endl;
+            if (std::remove(out_tmp.c_str()) != 0) std::cerr << "ColoredCDBG::searchMinRatioKmer(): Could not remove temporary file " << out_tmp << std::endl;
         }
     }
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(out_tmp.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1531,31 +1531,31 @@ bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, c
 }
 
 template<typename U>
-bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, const string& out_filename_prefix,
+bool ColoredCDBG<U>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
                                         const double min_ratio_kmers, const size_t nb_min_colors,
                                         const bool inexact_search, const bool files_as_queries,
                                         const size_t nb_threads, const bool verbose) const {
 
-    const string out_tmp = out_filename_prefix + ".tsv";
+    const std::string out_tmp = out_filename_prefix + ".tsv";
 
     {
         FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
 
         if (fp_tmp == NULL) {
 
-            cerr << "ColoredCDBG::searchMinRatioKmer(): Could not open file " << out_tmp << " for writing." << endl;
+            std::cerr << "ColoredCDBG::searchMinRatioKmer(): Could not open file " << out_tmp << " for writing." << std::endl;
             return false;
         }
         else {
 
             fclose(fp_tmp);
 
-            if (std::remove(out_tmp.c_str()) != 0) cerr << "ColoredCDBG::searchMinRatioKmer(): Could not remove temporary file " << out_tmp << endl;
+            if (std::remove(out_tmp.c_str()) != 0) std::cerr << "ColoredCDBG::searchMinRatioKmer(): Could not remove temporary file " << out_tmp << std::endl;
         }
     }
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(out_tmp.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1568,31 +1568,31 @@ bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, c
 }
 
 template<typename U>
-bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string& out_filename_prefix,
+bool ColoredCDBG<U>::search(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
                                     const bool found_km_ratio_out,
                                     const bool inexact_search, const bool files_as_queries,
                                     const size_t nb_threads, const bool verbose) const {
 
-    const string out_tmp = out_filename_prefix + ".tsv";
+    const std::string out_tmp = out_filename_prefix + ".tsv";
 
     {
         FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
 
         if (fp_tmp == NULL) {
 
-            cerr << "ColoredCDBG::search(): Could not open file " << out_tmp << " for writing." << endl;
+            std::cerr << "ColoredCDBG::search(): Could not open file " << out_tmp << " for writing." << std::endl;
             return false;
         }
         else {
 
             fclose(fp_tmp);
 
-            if (std::remove(out_tmp.c_str()) != 0) cerr << "ColoredCDBG::search(): Could not remove temporary file " << out_tmp << endl;
+            if (std::remove(out_tmp.c_str()) != 0) std::cerr << "ColoredCDBG::search(): Could not remove temporary file " << out_tmp << std::endl;
         }
     }
 
-    ofstream outfile;
-    ostream out(0);
+    std::ofstream outfile;
+    std::ostream out(0);
 
     outfile.open(out_tmp.c_str());
     out.rdbuf(outfile.rdbuf());
@@ -1605,7 +1605,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, const string&
 }
 
 template<typename U>
-bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, ostream& out,
+bool ColoredCDBG<U>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out,
                                         const double min_ratio_kmers,
                                         const bool inexact_search, const bool files_as_queries,
                                         const size_t nb_threads, const bool verbose) const {
@@ -1615,14 +1615,14 @@ bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, o
 }
 
 template<typename U>
-bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, ostream& out,
+bool ColoredCDBG<U>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out,
                                         const double min_ratio_kmers, const size_t min_nb_colors,
                                         const bool inexact_search, const bool files_as_queries,
                                         const size_t nb_threads, const bool verbose) const {
 
     if (min_nb_colors == 0) {
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Minimum number of required colors is 0." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Minimum number of required colors is 0." << std::endl;
         return false;
     }
 
@@ -1631,54 +1631,54 @@ bool ColoredCDBG<U>::searchMinRatioKmer(const vector<string>& query_filenames, o
 }
 
 template<typename U>
-bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filenames, ostream& out,
+bool ColoredCDBG<U>::searchMinRatioKmer_(   const std::vector<std::string>& query_filenames, std::ostream& out,
                                             const double min_ratio_kmers, const size_t min_nb_colors,
                                             const bool inexact_search, const bool files_as_queries,
                                             const size_t nb_threads, const bool verbose) const {
 
     if (invalid){
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Graph is invalid and cannot be searched" << std::endl;
         return false;
     }
 
     if (nb_threads > std::thread::hardware_concurrency()){
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << std::endl;
         return false;
     }
 
     if (nb_threads <= 0){
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Number of threads cannot be less than or equal to 0." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Number of threads cannot be less than or equal to 0." << std::endl;
         return false;
     }
 
     if (min_ratio_kmers <= 0.0){
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Ratio of k-mers is less than or equal to 0.0." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Ratio of k-mers is less than or equal to 0.0." << std::endl;
         return false;
     }
 
     if (min_ratio_kmers > 1.0){
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Ratio of k-mers is greater than 1.0." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Ratio of k-mers is greater than 1.0." << std::endl;
         return false;
     }
 
     if (min_nb_colors > getNbColors()) {
 
-        cerr << "ColoredCDBG::searchMinRatioKmer(): Minimum number of required colors is larger than total number of colors in graph." << endl;
+        std::cerr << "ColoredCDBG::searchMinRatioKmer(): Minimum number of required colors is larger than total number of colors in graph." << std::endl;
         return false;
     }
 
     if (out.fail()) {
 
-        cerr << "CompactedDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to." << endl;
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to." << std::endl;
         return false;
     }
 
-    if (verbose) cout << "ColoredCDBG::searchMinRatioKmer(): Querying graph." << endl;
+    if (verbose) std::cout << "ColoredCDBG::searchMinRatioKmer(): Querying graph." << std::endl;
 
     const size_t k = this->getK();
     const size_t thread_seq_buf_sz = BUFFER_SIZE;
@@ -1694,7 +1694,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
     const size_t nb_colors = getNbColors();
     const size_t sz_binary_color_query_out = nb_colors * l_query_res + 1;
 
-    string s;
+    std::string s;
 
     bool write_success = true;
     bool query_success = true;
@@ -1702,19 +1702,19 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
     size_t file_id = 0;
     size_t prev_file_id = 0xffffffffffffffffULL;
 
-    auto processCounts = [&](const vector<pair<size_t, const_UnitigColorMap<U>>>& v_um, Roaring* color_occ_r, uint32_t* color_occ_u){
+    auto processCounts = [&](const std::vector<std::pair<size_t, const_UnitigColorMap<U>>>& v_um, Roaring* color_occ_r, uint32_t* color_occ_u){
 
         struct hash_pair {
 
-            size_t operator() (const pair<size_t, pair<Kmer, size_t>>& p) const {
+            size_t operator() (const std::pair<size_t, std::pair<Kmer, size_t>>& p) const {
 
-                return wyhash(&p, sizeof(pair<size_t, pair<Kmer, size_t>>), 0, _wyp);
+                return wyhash(&p, sizeof(std::pair<size_t, std::pair<Kmer, size_t>>), 0, _wyp);
             }
         };
 
-        unordered_set<pair<size_t, pair<Kmer, size_t>>, hash_pair> s_um;
+        std::unordered_set<std::pair<size_t, std::pair<Kmer, size_t>>, hash_pair> s_um;
 
-        typename unordered_set<pair<size_t, pair<Kmer, size_t>>, hash_pair>::const_iterator it;
+        typename std::unordered_set<std::pair<size_t, std::pair<Kmer, size_t>>, hash_pair>::const_iterator it;
 
         for (const auto& p : v_um){
 
@@ -1821,9 +1821,9 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
         }
     };
 
-    auto searchQuery = [&](const string& query, Roaring* color_occ_r, uint32_t* color_occ_u, const size_t nb_km_min){
+    auto searchQuery = [&](const std::string& query, Roaring* color_occ_r, uint32_t* color_occ_u, const size_t nb_km_min){
 
-        const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_e = this->searchSequence(query, true, false, false, false, false);
+        const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_e = this->searchSequence(query, true, false, false, false, false);
 
         processCounts(v_um_e, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
@@ -1839,7 +1839,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                 else if (!nb_color_found_filtering && (nb_color_pres == nb_colors)) return;
             }
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_d = this->searchSequence(query, false, false, true, false, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_d = this->searchSequence(query, false, false, true, false, false);
 
             processCounts(v_um_d, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
@@ -1853,7 +1853,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                 else if (!nb_color_found_filtering && (nb_color_pres == nb_colors)) return;
             }
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_m = this->searchSequence(query, false, false, false, true, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_m = this->searchSequence(query, false, false, false, true, false);
 
             processCounts(v_um_m, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
@@ -1867,14 +1867,14 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                 else if (!nb_color_found_filtering && (nb_color_pres == nb_colors)) return;
             }
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_i = this->searchSequence(query, false, true, false, false, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_i = this->searchSequence(query, false, true, false, false, false);
 
             processCounts(v_um_i, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
         }
     };
 
     auto writeBinaryOutput = [&](   const char* query_name, const size_t len_query_name, const uint32_t* color_occ,
-                                    char* buffer_res, size_t& pos_buffer_out, const size_t nb_km_min, mutex& mtx){
+                                    char* buffer_res, size_t& pos_buffer_out, const size_t nb_km_min, std::mutex& mtx){
 
         bool is_found = false;
 
@@ -1888,7 +1888,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             if ((pos_buffer_out + len_query_name + l_query_res + 1) > thread_seq_buf_sz){
 
-                unique_lock<mutex> lock(mtx);
+                std::unique_lock<std::mutex> lock(mtx);
 
                 if (pos_buffer_out > 0) {
 
@@ -1911,7 +1911,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             if ((pos_buffer_out + len_query_name + sz_binary_color_query_out) > thread_seq_buf_sz){
 
-                unique_lock<mutex> lock(mtx);
+                std::unique_lock<std::mutex> lock(mtx);
 
                 if (pos_buffer_out > 0) {
 
@@ -1972,7 +1972,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
         if (nb_color_found_filtering) out << "\tpresence_query\n";
         else {
 
-            const vector<string> color_names = getColorNames();
+            const std::vector<std::string> color_names = getColorNames();
 
             for (const auto& name : color_names) out << '\t' << name;
 
@@ -1997,7 +1997,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             Roaring* color_occ_r = inexact_search ? new Roaring[nb_colors] : nullptr;
 
-            mutex mtx_file_out; // Dummy
+            std::mutex mtx_file_out; // Dummy
 
             size_t pos_buffer_out = 0;
             size_t nb_queries_found = 0;
@@ -2009,7 +2009,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                 // Write previous results if there are any
                 {
-                    const size_t nb_km_min = max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
+                    const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
 
                     if (files_as_queries) {
 
@@ -2058,7 +2058,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                 for (auto& c : s) c &= 0xDF;
 
                 if (files_as_queries) searchQuery(s, color_occ_r, color_occ_u, s.length() - k + 1);
-                else searchQuery(s, color_occ_r, color_occ_u, max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(s.length() - k + 1) * min_ratio_kmers))));
+                else searchQuery(s, color_occ_r, color_occ_u, std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(s.length() - k + 1) * min_ratio_kmers))));
 
                 prev_file_id = file_id;
             }
@@ -2066,7 +2066,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
             // Flush rest of buffer result to final output
             if (write_success && (prev_file_id != 0xffffffffffffffffULL)) {
 
-                const size_t nb_km_min = max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
+                const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
 
                 if (files_as_queries) {
 
@@ -2089,8 +2089,8 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             if (write_success && verbose) {
 
-                cout << "ColoredCDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries." << endl;
-                cout << "ColoredCDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries in at least " << ((min_nb_colors == 0) ? 1 : min_nb_colors) << " color(s)." << endl;
+                std::cout << "ColoredCDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries." << std::endl;
+                std::cout << "ColoredCDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries in at least " << ((min_nb_colors == 0) ? 1 : min_nb_colors) << " color(s)." << std::endl;
             }
         }
         else {
@@ -2107,14 +2107,14 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             bool stop = false;
 
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
             std::atomic<size_t> nb_queries_found;
             std::atomic<size_t> nb_queries_processed;
 
-            mutex mtx_files_in, mtx_file_out, mtx_file_id;
+            std::mutex mtx_files_in, mtx_file_out, mtx_file_id;
 
-            unordered_map<size_t, ResultFileQuery> um_file_id;
+            std::unordered_map<size_t, ResultFileQuery> um_file_id;
 
             nb_queries_found = 0;
             nb_queries_processed = 0;
@@ -2131,16 +2131,16 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                         uint32_t* color_occ_u = new uint32_t[nb_colors]();
                         Roaring* color_occ_r = inexact_search ? new Roaring[nb_colors] : nullptr;
 
-                        vector<string> buffer_seq;
-                        vector<string> buffer_name;
-                        vector<size_t> buffer_file_id;
+                        std::vector<std::string> buffer_seq;
+                        std::vector<std::string> buffer_name;
+                        std::vector<size_t> buffer_file_id;
 
                         while (true) {
 
                             {
                                 size_t buffer_sz = 0;
 
-                                unique_lock<mutex> lock(mtx_files_in);
+                                std::unique_lock<std::mutex> lock(mtx_files_in);
 
                                 if (stop) break; // Exit loop
 
@@ -2152,19 +2152,19 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                                         buffer_sz += s.length();
 
-                                        buffer_seq.push_back(move(s));
+                                        buffer_seq.push_back(std::move(s));
 
                                         if (files_as_queries) buffer_file_id.push_back(file_id);
-                                        else buffer_name.push_back(string(fp.getNameString()));
+                                        else buffer_name.push_back(std::string(fp.getNameString()));
                                     }
                                     else break;
                                 }
 
                                 if (files_as_queries) {
 
-                                    unique_lock<mutex> lock(mtx_file_id);
+                                    std::unique_lock<std::mutex> lock(mtx_file_id);
 
-                                    pair<typename unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id;
+                                    std::pair<typename std::unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id;
 
                                     size_t prev_file_id_local = 0xffffffffffffffffULL;
 
@@ -2172,7 +2172,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                                         if (file_id_local != prev_file_id_local) {
 
-                                            p_it_um_file_id = um_file_id.insert(pair<size_t, ResultFileQuery>(file_id_local, ResultFileQuery()));
+                                            p_it_um_file_id = um_file_id.insert(std::pair<size_t, ResultFileQuery>(file_id_local, ResultFileQuery()));
                                             prev_file_id_local = file_id_local;
 
                                             if (p_it_um_file_id.first->second.color_occ == nullptr) p_it_um_file_id.first->second.color_occ = new uint32_t[nb_colors]();
@@ -2182,7 +2182,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                                         if ((file_id_local != prev_file_id) && (prev_file_id != 0xffffffffffffffffULL)) {
 
-                                            typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+                                            typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
 
                                             if (it_um_file_id == um_file_id.end()) {
 
@@ -2197,7 +2197,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                                     if (query_success && stop && (prev_file_id != 0xffffffffffffffffULL)) { // This thread is the last one to read from input
 
-                                        typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+                                        typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
 
                                         if (it_um_file_id == um_file_id.end()) {
 
@@ -2212,7 +2212,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                             size_t l_nb_queries_found = 0;
                             size_t l_nb_queries_processed = 0;
 
-                            vector<pair<size_t, ResultFileQuery>> v_rfq_out;
+                            std::vector<std::pair<size_t, ResultFileQuery>> v_rfq_out;
 
                             for (size_t i = 0; i < buffer_seq.size(); ++i){
 
@@ -2225,9 +2225,9 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                                     searchQuery(buffer_seq[i], color_occ_r, color_occ_u, nb_km_query);
 
                                     {
-                                        unique_lock<mutex> lock(mtx_file_id);
+                                        std::unique_lock<std::mutex> lock(mtx_file_id);
 
-                                        typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(buffer_file_id[i]);
+                                        typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(buffer_file_id[i]);
 
                                         if (it_um_file_id == um_file_id.end()) {
 
@@ -2245,7 +2245,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
                                             if (rfq.is_read && (rfq.nb_queries == 0)) { // All records for this file have been 1/ read from input 2/ queried
 
-                                                v_rfq_out.push_back(pair<size_t, ResultFileQuery>(buffer_file_id[i], rfq)); // Makes a copy
+                                                v_rfq_out.push_back(std::pair<size_t, ResultFileQuery>(buffer_file_id[i], rfq)); // Makes a copy
                                                 rfq.color_occ = nullptr;
                                                 um_file_id.erase(it_um_file_id);
                                             }
@@ -2254,7 +2254,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                                 }
                                 else {
 
-                                    const size_t nb_km_min = max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
+                                    const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(std::round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
 
                                     searchQuery(buffer_seq[i], color_occ_r, color_occ_u, nb_km_min);
 
@@ -2279,8 +2279,8 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                                 for (const auto& p : v_rfq_out) {
 
                                     const ResultFileQuery& rfq = p.second;
-                                    const string& q_name = query_filenames[p.first];
-                                    const size_t nb_km_min = max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(rfq.nb_km_queries) * min_ratio_kmers)));
+                                    const std::string& q_name = query_filenames[p.first];
+                                    const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(std::round(static_cast<double>(rfq.nb_km_queries) * min_ratio_kmers)));
                                     const bool is_found = writeBinaryOutput(q_name.c_str(), q_name.length(), rfq.color_occ, buffer_res, pos_buffer_out, nb_km_min, mtx_file_out);
 
                                     delete[] rfq.color_occ;
@@ -2304,7 +2304,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                         // Flush rest of the thread buffer to output
                         if (write_success && (pos_buffer_out > 0)) {
 
-                            unique_lock<mutex> lock(mtx_file_out);
+                            std::unique_lock<std::mutex> lock(mtx_file_out);
 
                             out.write(buffer_res, pos_buffer_out);
                         }
@@ -2342,8 +2342,8 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                     }
                     else {
 
-                        const string& q_name = query_filenames[p.first];
-                        const size_t nb_km_min = max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(rfq.nb_km_queries) * min_ratio_kmers)));
+                        const std::string& q_name = query_filenames[p.first];
+                        const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(std::round(static_cast<double>(rfq.nb_km_queries) * min_ratio_kmers)));
                         const bool is_found = writeBinaryOutput(q_name.c_str(), q_name.length(), rfq.color_occ, buffer_res, pos_buffer_out, nb_km_min, mtx_file_out);
 
                         delete[] rfq.color_occ;
@@ -2356,7 +2356,7 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
                 // Flush rest of the thread buffer to output
                 if (write_success && (pos_buffer_out > 0)) {
 
-                    unique_lock<mutex> lock(mtx_file_out);
+                    std::unique_lock<std::mutex> lock(mtx_file_out);
 
                     out.write(buffer_res, pos_buffer_out);
                 }
@@ -2366,50 +2366,50 @@ bool ColoredCDBG<U>::searchMinRatioKmer_(   const vector<string>& query_filename
 
             if (write_success && query_success && verbose) {
 
-                cout << "ColoredCDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries." << endl;
-                cout << "ColoredCDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries in at least " << ((min_nb_colors == 0) ? 1 : min_nb_colors) << " color(s)." << endl;
+                std::cout << "ColoredCDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries." << std::endl;
+                std::cout << "ColoredCDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries in at least " << ((min_nb_colors == 0) ? 1 : min_nb_colors) << " color(s)." << std::endl;
             }
         }
 
         fp.close();
     }
 
-    if (!query_success) cerr << "ColoredCDBG::searchMinRatioKmer(): Unexpected error encountered. Please file an issue. Operation aborted." << endl;
-    if (!write_success) cerr << "ColoredCDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to. Operation aborted." << endl;
+    if (!query_success) std::cerr << "ColoredCDBG::searchMinRatioKmer(): Unexpected error encountered. Please file an issue. Operation aborted." << std::endl;
+    if (!write_success) std::cerr << "ColoredCDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to. Operation aborted." << std::endl;
 
     return write_success && query_success;
 }
 
 template<typename U>
-bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
+bool ColoredCDBG<U>::search(const std::vector<std::string>& query_filenames, std::ostream& out,
                                     const bool found_km_ratio_out, const bool inexact_search,
                                     const bool files_as_queries, const size_t nb_threads, const bool verbose) const {
 
     if (invalid){
 
-        cerr << "ColoredCDBG::search(): Graph is invalid and cannot be searched" << endl;
+        std::cerr << "ColoredCDBG::search(): Graph is invalid and cannot be searched" << std::endl;
         return false;
     }
 
     if (nb_threads > std::thread::hardware_concurrency()){
 
-        cerr << "ColoredCDBG::search(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << endl;
+        std::cerr << "ColoredCDBG::search(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << std::endl;
         return false;
     }
 
     if (nb_threads <= 0){
 
-        cerr << "ColoredCDBG::search(): Number of threads cannot be less than or equal to 0." << endl;
+        std::cerr << "ColoredCDBG::search(): Number of threads cannot be less than or equal to 0." << std::endl;
         return false;
     }
 
     if (out.fail()) {
 
-        cerr << "CompactedDBG::search(): Output stream is in a failed state and cannot be written to." << endl;
+        std::cerr << "CompactedDBG::search(): Output stream is in a failed state and cannot be written to." << std::endl;
         return false;
     }
 
-    if (verbose) cout << "ColoredCDBG::search(): Querying graph." << endl;
+    if (verbose) std::cout << "ColoredCDBG::search(): Querying graph." << std::endl;
 
     const size_t k = this->getK();
     const size_t thread_seq_buf_sz = BUFFER_SIZE;
@@ -2417,7 +2417,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
     const char eol = '\n';
 
-    string s;
+    std::string s;
 
     bool write_success = true;
     bool query_success = true;
@@ -2425,19 +2425,19 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
     size_t file_id = 0;
     size_t prev_file_id = 0xffffffffffffffffULL;
 
-    auto processCounts = [&](const vector<pair<size_t, const_UnitigColorMap<U>>>& v_um, Roaring* color_occ_r, uint32_t* color_occ_u){
+    auto processCounts = [&](const std::vector<std::pair<size_t, const_UnitigColorMap<U>>>& v_um, Roaring* color_occ_r, uint32_t* color_occ_u){
 
         struct hash_pair {
 
-            size_t operator() (const pair<size_t, pair<Kmer, size_t>>& p) const {
+            size_t operator() (const std::pair<size_t, std::pair<Kmer, size_t>>& p) const {
 
-                return wyhash(&p, sizeof(pair<size_t, pair<Kmer, size_t>>), 0, _wyp);
+                return wyhash(&p, sizeof(std::pair<size_t, std::pair<Kmer, size_t>>), 0, _wyp);
             }
         };
 
-        unordered_set<pair<size_t, pair<Kmer, size_t>>, hash_pair> s_um;
+        std::unordered_set<std::pair<size_t, std::pair<Kmer, size_t>>, hash_pair> s_um;
 
-        typename unordered_set<pair<size_t, pair<Kmer, size_t>>, hash_pair>::const_iterator it;
+        typename std::unordered_set<std::pair<size_t, std::pair<Kmer, size_t>>, hash_pair>::const_iterator it;
 
         for (const auto& p : v_um){
 
@@ -2544,46 +2544,46 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
         }
     };
 
-    auto searchQuery = [&](const string& query, Roaring* color_occ_r, uint32_t* color_occ_u, const size_t nb_km_min){
+    auto searchQuery = [&](const std::string& query, Roaring* color_occ_r, uint32_t* color_occ_u, const size_t nb_km_min){
 
-        const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_e = this->searchSequence(query, true, false, false, false, false);
+        const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_e = this->searchSequence(query, true, false, false, false, false);
 
         processCounts(v_um_e, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
         if (inexact_search){
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_d = this->searchSequence(query, false, false, true, false, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_d = this->searchSequence(query, false, false, true, false, false);
 
             processCounts(v_um_d, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_m = this->searchSequence(query, false, false, false, true, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_m = this->searchSequence(query, false, false, false, true, false);
 
             processCounts(v_um_m, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
 
-            const vector<pair<size_t, const_UnitigColorMap<U>>> v_um_i = this->searchSequence(query, false, true, false, false, false);
+            const std::vector<std::pair<size_t, const_UnitigColorMap<U>>> v_um_i = this->searchSequence(query, false, true, false, false, false);
 
             processCounts(v_um_i, color_occ_r, color_occ_u); // Extract k-mer occurrences for each color
         }
     };
 
     auto writeQuantifiedOutput = [&](   const char* query_name, const size_t len_query_name, const size_t nb_km_query,
-                                        const uint32_t* color_occ, char* buffer_res, size_t& pos_buffer_out, mutex& mtx){
+                                        const uint32_t* color_occ, char* buffer_res, size_t& pos_buffer_out, std::mutex& mtx){
 
-        string color_query_out = "";
+        std::string color_query_out = "";
 
         for (size_t i = 0; i < nb_colors; ++i) {
 
             color_query_out += '\t';
 
-            if (!found_km_ratio_out) color_query_out += to_string(color_occ[i]);
-            else color_query_out += to_string(static_cast<double>(color_occ[i]) / static_cast<double>(nb_km_query));
+            if (!found_km_ratio_out) color_query_out += std::to_string(color_occ[i]);
+            else color_query_out += std::to_string(static_cast<double>(color_occ[i]) / static_cast<double>(nb_km_query));
         }
 
         const size_t l_color_query_out = color_query_out.length();
 
         if ((pos_buffer_out + len_query_name + l_color_query_out + 1) > thread_seq_buf_sz){
 
-            unique_lock<mutex> lock(mtx);
+            std::unique_lock<std::mutex> lock(mtx);
 
             if (pos_buffer_out > 0) {
 
@@ -2612,7 +2612,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
     // Write header to TSV file
     if (write_success) {
 
-        const vector<string> color_names = getColorNames();
+        const std::vector<std::string> color_names = getColorNames();
 
         out << "query_name";
 
@@ -2638,7 +2638,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
             Roaring* color_occ_r = inexact_search ? new Roaring[nb_colors] : nullptr;
 
-            mutex mtx_file_out; // Dummy
+            std::mutex mtx_file_out; // Dummy
 
             size_t pos_buffer_out = 0;
             size_t nb_queries_processed = 0;
@@ -2721,7 +2721,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
             if (color_occ_r != nullptr) delete[] color_occ_r;
             if (color_occ_u_fid != nullptr) delete[] color_occ_u_fid;
 
-            if (write_success && verbose) cout << "ColoredCDBG::search(): Processed " << nb_queries_processed << " queries. " << endl;
+            if (write_success && verbose) std::cout << "ColoredCDBG::search(): Processed " << nb_queries_processed << " queries. " << std::endl;
         }
         else {
 
@@ -2737,13 +2737,13 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
             bool stop = false;
 
-            vector<thread> workers; // need to keep track of threads so we can join them
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
             std::atomic<size_t> nb_queries_processed;
 
-            mutex mtx_files_in, mtx_file_out, mtx_file_id;
+            std::mutex mtx_files_in, mtx_file_out, mtx_file_id;
 
-            unordered_map<size_t, ResultFileQuery> um_file_id;
+            std::unordered_map<size_t, ResultFileQuery> um_file_id;
 
             nb_queries_processed = 0;
 
@@ -2759,16 +2759,16 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                         uint32_t* color_occ_u = new uint32_t[nb_colors]();
                         Roaring* color_occ_r = inexact_search ? new Roaring[nb_colors] : nullptr;
 
-                        vector<string> buffer_seq;
-                        vector<string> buffer_name;
-                        vector<size_t> buffer_file_id;
+                        std::vector<std::string> buffer_seq;
+                        std::vector<std::string> buffer_name;
+                        std::vector<size_t> buffer_file_id;
 
                         while (true) {
 
                             {
                                 size_t buffer_sz = 0;
 
-                                unique_lock<mutex> lock(mtx_files_in);
+                                std::unique_lock<std::mutex> lock(mtx_files_in);
 
                                 if (stop) break; // Exit loop
 
@@ -2780,19 +2780,19 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                         buffer_sz += s.length();
 
-                                        buffer_seq.push_back(move(s));
+                                        buffer_seq.push_back(std::move(s));
 
                                         if (files_as_queries) buffer_file_id.push_back(file_id);
-                                        else buffer_name.push_back(string(fp.getNameString()));
+                                        else buffer_name.push_back(std::string(fp.getNameString()));
                                     }
                                     else break;
                                 }
 
                                 if (files_as_queries) {
 
-                                    unique_lock<mutex> lock(mtx_file_id);
+                                    std::unique_lock<std::mutex> lock(mtx_file_id);
 
-                                    pair<typename unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id;
+                                    std::pair<typename std::unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id;
 
                                     size_t prev_file_id_local = 0xffffffffffffffffULL;
 
@@ -2800,7 +2800,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                         if (file_id_local != prev_file_id_local) {
 
-                                            p_it_um_file_id = um_file_id.insert(pair<size_t, ResultFileQuery>(file_id_local, ResultFileQuery()));
+                                            p_it_um_file_id = um_file_id.insert(std::pair<size_t, ResultFileQuery>(file_id_local, ResultFileQuery()));
                                             prev_file_id_local = file_id_local;
 
                                             if (p_it_um_file_id.first->second.color_occ == nullptr) p_it_um_file_id.first->second.color_occ = new uint32_t[nb_colors]();
@@ -2810,7 +2810,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                         if ((file_id_local != prev_file_id) && (prev_file_id != 0xffffffffffffffffULL)) {
 
-                                            typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+                                            typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
 
                                             if (it_um_file_id == um_file_id.end()) {
 
@@ -2825,7 +2825,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                     if (query_success && stop && (prev_file_id != 0xffffffffffffffffULL)) { // This thread is the last one to read from input
 
-                                        typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+                                        typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
 
                                         if (it_um_file_id == um_file_id.end()) {
 
@@ -2840,7 +2840,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                             size_t l_nb_queries_found = 0;
                             size_t l_nb_queries_processed = 0;
 
-                            vector<pair<size_t, ResultFileQuery>> v_rfq_out;
+                            std::vector<std::pair<size_t, ResultFileQuery>> v_rfq_out;
 
                             for (size_t i = 0; i < buffer_seq.size(); ++i) {
 
@@ -2852,9 +2852,9 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                 if (files_as_queries) {
 
-                                    unique_lock<mutex> lock(mtx_file_id);
+                                    std::unique_lock<std::mutex> lock(mtx_file_id);
 
-                                    typename unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(buffer_file_id[i]);
+                                    typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(buffer_file_id[i]);
 
                                     if (it_um_file_id == um_file_id.end()) {
 
@@ -2872,7 +2872,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
 
                                         if (rfq.is_read && (rfq.nb_queries == 0)) { // All records for this file have been 1/ read from input 2/ queried
 
-                                            v_rfq_out.push_back(pair<size_t, ResultFileQuery>(buffer_file_id[i], rfq)); // Makes a copy
+                                            v_rfq_out.push_back(std::pair<size_t, ResultFileQuery>(buffer_file_id[i], rfq)); // Makes a copy
                                             rfq.color_occ = nullptr;
                                             um_file_id.erase(it_um_file_id);
                                         }
@@ -2900,7 +2900,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                                 for (const auto& p : v_rfq_out) {
 
                                     const ResultFileQuery& rfq = p.second;
-                                    const string& q_name = query_filenames[p.first];
+                                    const std::string& q_name = query_filenames[p.first];
 
                                     writeQuantifiedOutput(q_name.c_str(), q_name.length(), rfq.nb_km_queries, rfq.color_occ, buffer_res, pos_buffer_out, mtx_file_out);
 
@@ -2923,7 +2923,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                         // Flush rest of the thread buffer to output
                         if (write_success && (pos_buffer_out > 0)) {
 
-                            unique_lock<mutex> lock(mtx_file_out);
+                            std::unique_lock<std::mutex> lock(mtx_file_out);
 
                             out.write(buffer_res, pos_buffer_out);
                         }
@@ -2961,7 +2961,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                     }
                     else {
 
-                        const string& q_name = query_filenames[p.first];
+                        const std::string& q_name = query_filenames[p.first];
 
                         writeQuantifiedOutput(q_name.c_str(), q_name.length(), rfq.nb_km_queries, rfq.color_occ, buffer_res, pos_buffer_out, mtx_file_out);
 
@@ -2974,7 +2974,7 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                 // Flush rest of the thread buffer to output
                 if (write_success && (pos_buffer_out > 0)) {
 
-                    unique_lock<mutex> lock(mtx_file_out);
+                    std::unique_lock<std::mutex> lock(mtx_file_out);
 
                     out.write(buffer_res, pos_buffer_out);
                 }
@@ -2982,26 +2982,26 @@ bool ColoredCDBG<U>::search(const vector<string>& query_filenames, ostream& out,
                 delete[] buffer_res;
             }
 
-            if (write_success && query_success && verbose) cout << "ColoredCDBG::search(): Processed " << nb_queries_processed << " queries. " << endl;
+            if (write_success && query_success && verbose) std::cout << "ColoredCDBG::search(): Processed " << nb_queries_processed << " queries. " << std::endl;
         }
 
         fp.close();
     }
 
-    if (!query_success) cerr << "ColoredCDBG::search(): Unexpected error encountered. Please file an issue. Operation aborted." << endl;
-    if (!write_success) cerr << "ColoredCDBG::search(): Output stream is in a failed state and cannot be written to. Operation aborted." << endl;
+    if (!query_success) std::cerr << "ColoredCDBG::search(): Unexpected error encountered. Please file an issue. Operation aborted." << std::endl;
+    if (!write_success) std::cerr << "ColoredCDBG::search(): Output stream is in a failed state and cannot be written to. Operation aborted." << std::endl;
 
     return write_success && query_success;
 }
 
 template<typename U>
-void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
+void ColoredCDBG<U>::checkColors(const std::vector<std::string>& filename_seq_in) const {
 
-    cout << "ColoredCDBG::checkColors(): Start" << endl;
+    std::cout << "ColoredCDBG::checkColors(): Start" << std::endl;
 
     size_t file_id = 0;
 
-    string s;
+    std::string s;
 
     KmerHashTable<tiny_vector<size_t, 1>> km_h;
 
@@ -3011,7 +3011,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
         for (KmerIterator it_km(s.c_str()), it_km_end; it_km != it_km_end; ++it_km) {
 
-            pair<KmerHashTable<tiny_vector<size_t, 1>>::iterator, bool> it = km_h.insert(it_km->first.rep(), tiny_vector<size_t, 1>());
+            std::pair<KmerHashTable<tiny_vector<size_t, 1>>::iterator, bool> it = km_h.insert(it_km->first.rep(), tiny_vector<size_t, 1>());
 
             tiny_vector<size_t, 1>& tv = *(it.first);
 
@@ -3025,7 +3025,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
     FQ.close();
 
-    cout << "ColoredCDBG::checkColors(): All k-mers in the hash table with their colors" << endl;
+    std::cout << "ColoredCDBG::checkColors(): All k-mers in the hash table with their colors" << std::endl;
 
     for (typename KmerHashTable<tiny_vector<size_t, 1>>::const_iterator it_km = km_h.begin(), it_km_end = km_h.end(); it_km != it_km_end; ++it_km){
 
@@ -3034,7 +3034,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
         if (ucm.isEmpty){
 
-            cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " is not found in the graph" << endl;
+            std::cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " is not found in the graph" << std::endl;
             exit(1);
         }
 
@@ -3042,7 +3042,7 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
         if (cs == nullptr){
 
-            cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " has no color set associated" << endl;
+            std::cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " has no color set associated" << std::endl;
             exit(1);
         }
 
@@ -3056,21 +3056,21 @@ void ColoredCDBG<U>::checkColors(const vector<string>& filename_seq_in) const {
 
             if (color_pres_graph != color_pres_hasht){
 
-                cerr << "ColoredCDBG::checkColors(): Current color is " << i << ": " << filename_seq_in[i] << endl;
-                cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " for color " << i << ": " << filename_seq_in[i] << endl;
-                cerr << "ColoredCDBG::checkColors(): Size unitig: " << ucm.size << endl;
-                cerr << "ColoredCDBG::checkColors(): Mapping position: " << ucm.dist << endl;
-                cerr << "ColoredCDBG::checkColors(): Mapping strand: " << ucm.strand << endl;
-                cerr << "ColoredCDBG::checkColors(): Present in graph: " << color_pres_graph << endl;
-                cerr << "ColoredCDBG::checkColors(): Present in hash table: " << color_pres_hasht << endl;
+                std::cerr << "ColoredCDBG::checkColors(): Current color is " << i << ": " << filename_seq_in[i] << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): K-mer " << km.toString() << " for color " << i << ": " << filename_seq_in[i] << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): Size unitig: " << ucm.size << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): Mapping position: " << ucm.dist << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): Mapping strand: " << ucm.strand << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): Present in graph: " << color_pres_graph << std::endl;
+                std::cerr << "ColoredCDBG::checkColors(): Present in hash table: " << color_pres_hasht << std::endl;
 
                 exit(1);
             }
         }
     }
 
-    cout << "ColoredCDBG::checkColors(): Checked all colors of all k-mers: everything is fine" << endl;
-    cout << "ColoredCDBG::checkColors(): Number of k-mers in the graph: " << km_h.size() << endl;
+    std::cout << "ColoredCDBG::checkColors(): Checked all colors of all k-mers: everything is fine" << std::endl;
+    std::cout << "ColoredCDBG::checkColors(): Number of k-mers in the graph: " << km_h.size() << std::endl;
 }
 
 #endif

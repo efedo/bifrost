@@ -93,7 +93,7 @@ class RepHash {
 
             uint64_t hashes[2] = {h, ht};
 
-            if (hashes[1] < hashes[0]) swap(hashes[0], hashes[1]);
+            if (hashes[1] < hashes[0]) std::swap(hashes[0], hashes[1]);
 
             return wyhash(hashes, sizeof(uint64_t) + sizeof(uint64_t), 0, _wyp);
         }
@@ -140,7 +140,7 @@ class RepHash {
         size_t k;
         uint64_t h, ht;
 
-        string str;
+        std::string str;
 };
 
 #else
@@ -203,7 +203,7 @@ class RepHash {
 
             uint64_t hashes[2] = {h.lo, ht.lo};
 
-            if (hashes[1] < hashes[0]) swap(hashes[0], hashes[1]);
+            if (hashes[1] < hashes[0]) std::swap(hashes[0], hashes[1]);
 
             return wyhash(hashes, sizeof(uint64_t) + sizeof(uint64_t), 0, _wyp);
         }
@@ -275,7 +275,7 @@ class RepHash {
             x.hi = (x.hi << k) | ((x.lo & lastkmask) >> (64 - k));
             x.lo = (x.lo << k) | (upper >> (64 - k));
 
-            if (full_k & 64) swap(x.hi, x.lo);
+            if (full_k & 64) std::swap(x.hi, x.lo);
         }
 
         inline void fastrightshiftk(rep_state_t& x) const {
@@ -285,7 +285,7 @@ class RepHash {
             x.hi = (x.hi >> k) | ((x.lo & firstkmask) << (64 - k));
             x.lo = (x.lo >> k) | (lower << (64 - k));
 
-            if (full_k & 64) swap(x.hi, x.lo);
+            if (full_k & 64) std::swap(x.hi, x.lo);
         }
 
         inline void fastleftshift1(rep_state_t& x) const {
