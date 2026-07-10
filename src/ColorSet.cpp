@@ -4,6 +4,8 @@
 
 #include "ColorSet.hpp"
 
+using namespace std;
+
 UnitigColors::UnitigColors() : setBits(localBitVector) {}
 
 UnitigColors::UnitigColors(const UnitigColors& o) {
@@ -721,7 +723,7 @@ void UnitigColors::remove(const UnitigMapBase& um, const size_t color_id) {
 
                 setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
 
-                *this = move(new_uc);
+                *this = std::move(new_uc);
             }
             else setBits = (reinterpret_cast<uintptr_t>(t_bmp.detach()) & pointerMask) | localTinyBitmap;
         }
@@ -771,7 +773,7 @@ void UnitigColors::remove(const UnitigMapBase& um, const size_t color_id) {
 
             for (; it != it_end; ++it) new_uc.add(it.getColorID() * um_km_sz + it.getKmerPosition());
 
-            *this = move(new_uc);
+            *this = std::move(new_uc);
         }
         else if ((setBits & flagMask) == ptrBitmap) bitmap->r.runOptimize();
     }
@@ -1097,8 +1099,8 @@ bool UnitigColors::optimizeFullColors(const UnitigMapBase& um){
 
             UnitigColors* uc = new UnitigColors[2];
 
-            uc[0] = move(full_uc);
-            uc[1] = move(non_full_uc);
+            uc[0] = std::move(full_uc);
+            uc[1] = std::move(non_full_uc);
 
             setBits = (reinterpret_cast<uintptr_t>(uc) & pointerMask) | ptrUnitigColors;
 
@@ -1121,8 +1123,8 @@ UnitigColors UnitigColors::makeFullColors(const UnitigMapBase& um) const {
 
     UnitigColors* uc = new UnitigColors[2];
 
-    uc[0] = move(full_uc);
-    uc[1] = move(non_full_uc);
+    uc[0] = std::move(full_uc);
+    uc[1] = std::move(non_full_uc);
 
     new_uc.setBits = (reinterpret_cast<uintptr_t>(uc) & pointerMask) | ptrUnitigColors;
 

@@ -4,6 +4,8 @@
 #include "CompressedSequence.hpp"
 #include "Kmer.hpp"
 
+using namespace std;
+
 CompressedSequence::CompressedSequence() {
 
     initShort();

@@ -1,5 +1,7 @@
 #include "GFA_Parser.hpp"
 
+using namespace std;
+
 GFA_Parser::GFA_Parser() : file_open_write(false), file_open_read(false), file_no(0), v_gfa(0), graph_out(nullptr), graph_in(nullptr) {}
 
 GFA_Parser::GFA_Parser(const string& filename) :    file_open_write(false), file_open_read(false), file_no(0),
@@ -14,8 +16,8 @@ GFA_Parser::GFA_Parser(const vector<string>& filenames) :   file_open_write(fals
     graph_filenames = filenames;
 }
 
-GFA_Parser::GFA_Parser(GFA_Parser&& o) :    graph_filenames(move(o.graph_filenames)),
-                                            graph_out(move(o.graph_out)), graph_in(move(o.graph_in)),
+GFA_Parser::GFA_Parser(GFA_Parser&& o) :    graph_filenames(std::move(o.graph_filenames)),
+                                            graph_out(std::move(o.graph_out)), graph_in(std::move(o.graph_in)),
                                             v_gfa(o.v_gfa), file_no(o.file_no),
                                             file_open_write(o.file_open_write), file_open_read(o.file_open_read) {
 
@@ -31,8 +33,8 @@ GFA_Parser& GFA_Parser::operator=(GFA_Parser&& o){
 
         graph_filenames = o.graph_filenames;
 
-        graph_in = move(o.graph_in);
-        graph_out = move(o.graph_out);
+        graph_in = std::move(o.graph_in);
+        graph_out = std::move(o.graph_out);
 
         v_gfa = o.v_gfa;
         file_no = o.file_no;
@@ -314,10 +316,10 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id) {
                         close();
                     }
 
-                    s.id = move(line_fields[0]);
-                    s.seq = move(line_fields[1]);
+                    s.id = std::move(line_fields[0]);
+                    s.seq = std::move(line_fields[1]);
 
-                    for (size_t i = 2; i < line_fields_sz; ++i) s.tags.push_back(move(line_fields[i]));
+                    for (size_t i = 2; i < line_fields_sz; ++i) s.tags.push_back(std::move(line_fields[i]));
                 }
                 else {
 
@@ -327,11 +329,11 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id) {
                         close();
                     }
 
-                    s.id = move(line_fields[0]);
+                    s.id = std::move(line_fields[0]);
                     s.len = sscanf(line_fields[1].c_str(), "%zu", &(s.len));
-                    s.seq = move(line_fields[2]);
+                    s.seq = std::move(line_fields[2]);
 
-                    for (size_t i = 3; i < line_fields_sz; ++i) s.tags.push_back(move(line_fields[i]));
+                    for (size_t i = 3; i < line_fields_sz; ++i) s.tags.push_back(std::move(line_fields[i]));
                 }
 
                 file_id = file_no;
@@ -363,8 +365,8 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id) {
                     close();
                 }
 
-                e.vertexA_id = move(line_fields[0]);
-                e.vertexB_id = move(line_fields[2]);
+                e.vertexA_id = std::move(line_fields[0]);
+                e.vertexB_id = std::move(line_fields[2]);
 
                 if (line_fields[1] == "+") e.strand_overlapA = true;
                 else if (line_fields[1] == "-") e.strand_overlapA = false;
@@ -418,7 +420,7 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id) {
                 e.strand_overlapA = (ca != '-');
 
                 if ((ca == '-') || (ca == '-')) e.vertexA_id = line_fields[1].substr(0, line_fields[1].length() - 1);
-                else e.vertexA_id = move(line_fields[1]);
+                else e.vertexA_id = std::move(line_fields[1]);
 
                 sscanf(line_fields[2].c_str(), "%zu", &(e.pos_start_overlapA));
                 sscanf(line_fields[3].c_str(), "%zu", &(e.pos_end_overlapA));
@@ -428,7 +430,7 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id) {
                 e.strand_overlapB = (cb != '-');
 
                 if ((cb == '-') || (cb == '-')) e.vertexB_id = line_fields[4].substr(0, line_fields[4].length() - 1);
-                else e.vertexB_id = move(line_fields[4]);
+                else e.vertexB_id = std::move(line_fields[4]);
 
                 sscanf(line_fields[5].c_str(), "%zu", &(e.pos_start_overlapB));
                 sscanf(line_fields[6].c_str(), "%zu", &(e.pos_end_overlapB));
@@ -511,10 +513,10 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id, bool& new_file_opened, co
                         close();
                     }
 
-                    s.id = move(line_fields[0]);
-                    s.seq = move(line_fields[1]);
+                    s.id = std::move(line_fields[0]);
+                    s.seq = std::move(line_fields[1]);
 
-                    for (size_t i = 2; i < line_fields_sz; ++i) s.tags.push_back(move(line_fields[i]));
+                    for (size_t i = 2; i < line_fields_sz; ++i) s.tags.push_back(std::move(line_fields[i]));
                 }
                 else {
 
@@ -524,11 +526,11 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id, bool& new_file_opened, co
                         close();
                     }
 
-                    s.id = move(line_fields[0]);
+                    s.id = std::move(line_fields[0]);
                     s.len = sscanf(line_fields[1].c_str(), "%zu", &(s.len));
-                    s.seq = move(line_fields[2]);
+                    s.seq = std::move(line_fields[2]);
 
-                    for (size_t i = 3; i < line_fields_sz; ++i) s.tags.push_back(move(line_fields[i]));
+                    for (size_t i = 3; i < line_fields_sz; ++i) s.tags.push_back(std::move(line_fields[i]));
                 }
 
                 file_id = file_no;
@@ -562,8 +564,8 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id, bool& new_file_opened, co
                         close();
                     }
 
-                    e.vertexA_id = move(line_fields[0]);
-                    e.vertexB_id = move(line_fields[2]);
+                    e.vertexA_id = std::move(line_fields[0]);
+                    e.vertexB_id = std::move(line_fields[2]);
 
                     if (line_fields[1] == "+") e.strand_overlapA = true;
                     else if (line_fields[1] == "-") e.strand_overlapA = false;
@@ -610,14 +612,14 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id, bool& new_file_opened, co
                         close();
                     }
 
-                    e.edge_id = move(line_fields[0]);
+                    e.edge_id = std::move(line_fields[0]);
 
                     const char ca = line_fields[1][line_fields[1].length() - 1]; // Last char. of line_fields[1];
 
                     e.strand_overlapA = (ca != '-');
 
                     if ((ca == '-') || (ca == '-')) e.vertexA_id = line_fields[1].substr(0, line_fields[1].length() - 1);
-                    else e.vertexA_id = move(line_fields[1]);
+                    else e.vertexA_id = std::move(line_fields[1]);
 
                     sscanf(line_fields[2].c_str(), "%zu", &(e.pos_start_overlapA));
                     sscanf(line_fields[3].c_str(), "%zu", &(e.pos_end_overlapA));
@@ -627,7 +629,7 @@ GFA_Parser::GFA_line GFA_Parser::read(size_t& file_id, bool& new_file_opened, co
                     e.strand_overlapB = (cb != '-');
 
                     if ((cb == '-') || (cb == '-')) e.vertexB_id = line_fields[4].substr(0, line_fields[4].length() - 1);
-                    else e.vertexB_id = move(line_fields[4]);
+                    else e.vertexB_id = std::move(line_fields[4]);
 
                     sscanf(line_fields[5].c_str(), "%zu", &(e.pos_start_overlapB));
                     sscanf(line_fields[6].c_str(), "%zu", &(e.pos_end_overlapB));

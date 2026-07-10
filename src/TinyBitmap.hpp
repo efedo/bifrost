@@ -21,8 +21,6 @@
 *  - CRoaring has a lot more functions (set intersection, union, etc.).
 */
 
-using namespace std;
-
 class TinyBitmap {
 
     class TinyBitmapIterator : public std::iterator<std::input_iterator_tag, uint32_t> {
@@ -96,8 +94,8 @@ class TinyBitmap {
 
         uint32_t maximum() const;
 
-        bool write(ostream& stream_out) const;
-        bool read(istream& stream_in);
+        bool write(std::ostream& stream_out) const;
+        bool read(std::istream& stream_in);
 
         inline void toArray(uint32_t* values) const {
 

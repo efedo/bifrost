@@ -27,7 +27,7 @@ BlockedBloomFilter::BlockedBloomFilter(const BlockedBloomFilter& o) :   table_(n
 }
 
 BlockedBloomFilter::BlockedBloomFilter(BlockedBloomFilter&& o) :    table_(o.table_), blocks_(o.blocks_), nb_bits_per_elem(o.nb_bits_per_elem),
-                                                                    k_(o.k_), M_u64(o.M_u64), seed1(o.seed1), seed2(o.seed2), ush(move(o.ush)) {
+                                                                    k_(o.k_), M_u64(o.M_u64), seed1(o.seed1), seed2(o.seed2), ush(std::move(o.ush)) {
 
     o.table_ = nullptr;
 
@@ -80,7 +80,7 @@ BlockedBloomFilter& BlockedBloomFilter::operator=(BlockedBloomFilter&& o) {
         seed1 = o.seed1;
         seed2 = o.seed2;
 
-        ush = move(o.ush);
+        ush = std::move(o.ush);
 
         o.table_ = nullptr;
 
@@ -160,7 +160,7 @@ DualBlockedBloomFilter BlockedBloomFilter::transferToDBBF(const uint64_t idx_bbf
     dbbf.seed1 = seed1;
     dbbf.seed2 = seed2;
 
-    dbbf.ush[idx_bbf_norm] = move(ush);
+    dbbf.ush[idx_bbf_norm] = std::move(ush);
     dbbf.table_ = new DualBlockedBloomFilter::BBF_Block[blocks_ << 1];
 
     for (size_t i = 0; i < blocks_; ++i) {
@@ -622,7 +622,7 @@ DualBlockedBloomFilter::DualBlockedBloomFilter(const DualBlockedBloomFilter& o) 
 }
 
 DualBlockedBloomFilter::DualBlockedBloomFilter(DualBlockedBloomFilter&& o) :    table_(o.table_), blocks_(o.blocks_), nb_bits_per_elem(o.nb_bits_per_elem),
-                                                                                k_(o.k_), M_u64(o.M_u64), seed1(o.seed1), seed2(o.seed2), ush{move(o.ush[0]), move(o.ush[1])} {
+                                                                                k_(o.k_), M_u64(o.M_u64), seed1(o.seed1), seed2(o.seed2), ush{std::move(o.ush[0]), std::move(o.ush[1])} {
 
     o.table_ = nullptr;
 
@@ -645,8 +645,8 @@ DualBlockedBloomFilter& DualBlockedBloomFilter::operator=(const DualBlockedBloom
     seed1 = o.seed1;
     seed2 = o.seed2;
 
-    ush[0] = o.ush[0];
-    ush[1] = o.ush[1];
+    ush[0] = std::move(o.ush[0]);
+    ush[1] = std::move(o.ush[1]);
 
     if (blocks_ != 0) {
 
@@ -677,8 +677,8 @@ DualBlockedBloomFilter& DualBlockedBloomFilter::operator=(DualBlockedBloomFilter
         seed1 = o.seed1;
         seed2 = o.seed2;
 
-        ush[0] = move(o.ush[0]);
-        ush[1] = move(o.ush[1]);
+        ush[0] = std::move(o.ush[0]);
+        ush[1] = std::move(o.ush[1]);
 
         o.table_ = nullptr;
 
@@ -927,7 +927,7 @@ BlockedBloomFilter DualBlockedBloomFilter::transferToBBF(const uint64_t idx_bbf)
     bbf.seed2 = seed2;
     bbf.M_u64 = M_u64;
 
-    bbf.ush = move(ush[idx_bbf_norm]);
+    bbf.ush = std::move(ush[idx_bbf_norm]);
     bbf.table_ = new BlockedBloomFilter::BBF_Block[blocks_];
 
     for (size_t i = 0; i < blocks_; ++i) {

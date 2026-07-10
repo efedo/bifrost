@@ -36,8 +36,16 @@ endif(COMPILATION_ARCH MATCHES "OFF")
 
 if(ENABLE_AVX2 MATCHES "OFF")
 	message("Disabling AVX2 instructions")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-avx2")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx2")
+	# Only add -mno-avx2 for GCC or for Intel architectures where it's meaningful
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR 
+	   (NOT APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64"))
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-avx2")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-avx2")
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+		# For clang on x86_64, use -mno-avx2 but suppress the warning if it's unused
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-command-line-argument -mno-avx2")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument -mno-avx2")
+	endif()
 endif(ENABLE_AVX2 MATCHES "OFF")
 
 # Manages build types 

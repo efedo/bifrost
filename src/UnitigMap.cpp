@@ -1,5 +1,7 @@
 #include "UnitigMap.hpp"
 
+
+
 UnitigMapBase::UnitigMapBase(const size_t length) : len(length), dist(0), size(0), strand(true), isEmpty(true) {}
 
 UnitigMapBase::UnitigMapBase(const size_t start, const size_t length, const size_t unitig_sz, const bool strand) :

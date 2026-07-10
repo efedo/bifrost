@@ -3,6 +3,8 @@
 #include "Kmer.hpp"
 #include "KmerIterator.hpp"
 
+using namespace std;
+
 KmerIterator& KmerIterator::operator++() {
 
     if (!invalid) {
