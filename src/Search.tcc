@@ -2,9 +2,9 @@
 #define BIFROST_SEARCH_CDBG_TCC
 
 template<typename U, typename G>
-std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence( const std::string& s, const bool exact, const bool insertion,
-                                                                                const bool deletion, const bool substitution,
-                                                                                const bool or_exclusive_match) {
+std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequence(   const std::string& s, const bool exact, const bool insertion,
+                                                                            const bool deletion, const bool substitution,
+                                                                            const bool or_exclusive_match) {
 
     struct hash_pair {
 
@@ -36,7 +36,7 @@ std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequen
 
     std::unordered_set<std::pair<size_t, Kmer>, hash_pair> us_pos_km;
 
-    auto comp_pair = [](const std::pair<size_t, UnitigMap<U, G>>& p1, const std::pair<size_t, UnitigMap<U, G>>& p2) {
+    auto comp_pair = [](const std::pair<size_t, UnitigMap<U, G>>& p1, const std::pair<size_t, UnitigMap<U, G>>& p2) -> bool {
 
         return (p1.first < p2.first);
     };
@@ -266,9 +266,9 @@ std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequen
         return std::vector<std::pair<size_t, UnitigMap<U, G>>>();
     }
 
-    if (ratio_kmers < 0.0){
+    if (ratio_kmers <= 0.0){
 
-        std::cerr << "CompactedDBG::searchSequence(): Ratio of k-mers is less than 0.0" << std::endl;
+        std::cerr << "CompactedDBG::searchSequence(): Ratio of k-mers is less than or equal to 0.0" << std::endl;
 
         return std::vector<std::pair<size_t, UnitigMap<U, G>>>();
     }
@@ -287,7 +287,7 @@ std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequen
         return std::vector<std::pair<size_t, UnitigMap<U, G>>>();
     }
 
-    const size_t nb_km_min = static_cast<double>(s.length() - k_ + 1) * ratio_kmers;
+    const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(s.length() - k_ + 1) * ratio_kmers)));
 
     Roaring rpos;
 
@@ -297,7 +297,7 @@ std::vector<std::pair<size_t, UnitigMap<U, G>>> CompactedDBG<U, G>::searchSequen
 
     std::unordered_set<std::pair<size_t, Kmer>, hash_pair> us_pos_km;
 
-    auto comp_pair = [](const std::pair<size_t, UnitigMap<U, G>>& p1, const std::pair<size_t, UnitigMap<U, G>>& p2) {
+    auto comp_pair = [](const std::pair<size_t, UnitigMap<U, G>>& p1, const std::pair<size_t, UnitigMap<U, G>>& p2) -> bool {
 
         return (p1.first < p2.first);
     };
@@ -557,7 +557,7 @@ std::vector<std::pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::search
 
     std::unordered_set<std::pair<size_t, Kmer>, hash_pair> us_pos_km;
 
-    auto comp_pair = [](const std::pair<size_t, const_UnitigMap<U, G>>& p1, const std::pair<size_t, const_UnitigMap<U, G>>& p2) {
+    auto comp_pair = [](const std::pair<size_t, const_UnitigMap<U, G>>& p1, const std::pair<size_t, const_UnitigMap<U, G>>& p2) -> bool {
 
         return (p1.first < p2.first);
     };
@@ -787,9 +787,9 @@ std::vector<std::pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::search
         return std::vector<std::pair<size_t, const_UnitigMap<U, G>>>();
     }
 
-    if (ratio_kmers < 0.0){
+    if (ratio_kmers <= 0.0){
 
-        std::cerr << "CompactedDBG::searchSequence(): Ratio of k-mers is less than 0.0" << std::endl;
+        std::cerr << "CompactedDBG::searchSequence(): Ratio of k-mers is less than or equal to 0.0" << std::endl;
 
         return std::vector<std::pair<size_t, const_UnitigMap<U, G>>>();
     }
@@ -808,7 +808,7 @@ std::vector<std::pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::search
         return std::vector<std::pair<size_t, const_UnitigMap<U, G>>>();
     }
 
-    const size_t nb_km_min = static_cast<double>(s.length() - k_ + 1) * ratio_kmers;
+    const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(s.length() - k_ + 1) * ratio_kmers)));
 
     Roaring rpos;
 
@@ -818,7 +818,7 @@ std::vector<std::pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::search
 
     std::unordered_set<std::pair<size_t, Kmer>, hash_pair> us_pos_km;
 
-    auto comp_pair = [](const std::pair<size_t, const_UnitigMap<U, G>>& p1, const std::pair<size_t, const_UnitigMap<U, G>>& p2) {
+    auto comp_pair = [](const std::pair<size_t, const_UnitigMap<U, G>>& p1, const std::pair<size_t, const_UnitigMap<U, G>>& p2) -> bool {
 
         return (p1.first < p2.first);
     };
@@ -1044,9 +1044,538 @@ std::vector<std::pair<size_t, const_UnitigMap<U, G>>> CompactedDBG<U, G>::search
 }
 
 template<typename U, typename G>
+bool CompactedDBG<U, G>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
+                                            const double min_ratio_kmers,
+                                            const bool inexact_search, const bool files_as_queries,
+                                            const size_t nb_threads, const size_t verbose) const {
+
+    const std::string out_tmp = out_filename_prefix + ".tsv";
+
+    {
+        FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
+
+        if (fp_tmp == NULL) {
+
+            std::cerr << "CompactedDBG::searchMinRatioKmer(): Could not open file " << out_tmp << " for writing." << std::endl;
+            return false;
+        }
+        else {
+
+            fclose(fp_tmp);
+
+            if (std::remove(out_tmp.c_str()) != 0) {
+
+                std::cerr << "CompactedDBG::searchMinRatioKmer(): Could not remove temporary file " << out_tmp << std::endl;
+            }
+        }
+    }
+
+    std::ofstream outfile;
+    std::ostream out(0);
+
+    outfile.open(out_tmp.c_str());
+    out.rdbuf(outfile.rdbuf());
+
+    const bool ret = this->searchMinRatioKmer(  query_filenames, out, min_ratio_kmers,
+                                                inexact_search, files_as_queries, nb_threads, verbose);
+
+    outfile.close();
+
+    return ret;
+}
+
+template<typename U, typename G>
 bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
-                                const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
-                                const size_t verbose) const {
+                                const bool found_km_ratio_out, const bool inexact_search,
+                                const bool files_as_queries, const size_t nb_threads, const bool verbose) const {
+
+    const std::string out_tmp = out_filename_prefix + ".tsv";
+
+    {
+        FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
+
+        if (fp_tmp == NULL) {
+
+            std::cerr << "CompactedDBG::search(): Could not open file " << out_tmp << " for writing." << std::endl;
+            return false;
+        }
+        else {
+
+            fclose(fp_tmp);
+
+            if (std::remove(out_tmp.c_str()) != 0) {
+
+                std::cerr << "CompactedDBG::search(): Could not remove temporary file " << out_tmp << std::endl;
+            }
+        }
+    }
+
+    std::ofstream outfile;
+    std::ostream out(0);
+
+    outfile.open(out_tmp.c_str());
+    out.rdbuf(outfile.rdbuf());
+
+    const bool ret = this->search(  query_filenames, out, found_km_ratio_out,
+                                    inexact_search, files_as_queries, nb_threads, verbose);
+
+    outfile.close();
+
+    return ret;
+}
+
+template<typename U, typename G>
+bool CompactedDBG<U, G>::searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out, const double min_ratio_kmers,
+                                            const bool inexact_search, const bool files_as_queries,
+                                            const size_t nb_threads, const size_t verbose) const {
+
+     if (invalid){
+
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Graph is invalid and cannot be searched" << std::endl;
+        return false;
+    }
+
+    if (nb_threads > std::thread::hardware_concurrency()){
+
+        std::cerr << "CompactedDBG::search(): Number of threads cannot be greater than or equal to " << std::thread::hardware_concurrency() << "." << std::endl;
+        return false;
+    }
+
+    if (nb_threads <= 0){
+
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Number of threads cannot be less than or equal to 0." << std::endl;
+        return false;
+    }
+
+    if (min_ratio_kmers <= 0.0){
+
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Ratio of k-mers is less than or equal to 0.0." << std::endl;
+        return false;
+    }
+
+    if (min_ratio_kmers > 1.0){
+
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Ratio of k-mers is greater than 1.0." << std::endl;
+        return false;
+    }
+
+    if (out.fail()) {
+
+        std::cerr << "CompactedDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to." << std::endl;
+        return false;
+    }
+
+    if (verbose) std::cout << "CompactedDBG::searchMinRatioKmer(): Querying graph." << std::endl;
+
+    const CompactedDBG<U, G>& dbg = *this;
+
+    std::string s;
+
+    bool write_success = true;
+    bool query_success = true;
+
+    size_t file_id = 0;
+    size_t prev_file_id = 0xffffffffffffffffULL; // Please don't input 2^64-1 files :D
+
+    const size_t thread_seq_buf_sz = BUFFER_SIZE;
+
+    const double ratio = files_as_queries ? 1.0 : min_ratio_kmers;
+
+    FileParser fp(query_filenames);
+
+    const char query_pres[3] = {'\t', '1', '\n'};
+    const char query_abs[3] = {'\t', '0', '\n'};
+
+    const size_t l_query_res = 3;
+
+    if (write_success) {
+
+        out << "query_name\tpresence_query\n"; // Write header to TSV file
+
+        write_success = (write_success && !out.fail());
+    }
+
+    if (write_success) {
+
+        if (nb_threads == 1){
+
+            const char* query_name = nullptr;
+
+            char* buffer_res = new char[thread_seq_buf_sz];
+
+            size_t pos_buffer_out = 0;
+
+            size_t nb_queries_found = 0;
+            size_t nb_queries_processed = 0;
+
+            size_t nb_km_found = 0;
+            size_t nb_km_query = 0;
+
+            auto writeBinaryOutput = [&]() {
+
+                const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
+                const size_t len_query_name = strlen(query_name);
+
+                const bool is_found = (nb_km_found >= nb_km_min);
+
+                if (pos_buffer_out + len_query_name + l_query_res >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+
+                    out.write(buffer_res, pos_buffer_out); // Write result buffer
+
+                    pos_buffer_out = 0; // Reset position to 0;
+                    write_success = (write_success && !out.fail());
+                }
+
+                // Copy new result to buffer
+                std::memcpy(buffer_res + pos_buffer_out, query_name, len_query_name * sizeof(char));
+
+                if (is_found){
+
+                    std::memcpy(buffer_res + pos_buffer_out + len_query_name, query_pres, l_query_res * sizeof(char));
+
+                    ++nb_queries_found;
+                }
+                else std::memcpy(buffer_res + pos_buffer_out + len_query_name, query_abs, l_query_res * sizeof(char));
+
+                pos_buffer_out += len_query_name + l_query_res;
+            };
+
+            while (write_success && query_success && fp.read(s, file_id)){
+
+                if (files_as_queries) {
+
+                    if (file_id != prev_file_id) {
+
+                        if (prev_file_id != 0xffffffffffffffffULL) { // Push results to buffer, write buffer if overflow
+
+                            writeBinaryOutput();
+
+                            ++nb_queries_processed;
+                        }
+
+                        query_name = query_filenames[file_id].c_str(); // Query name is the filename
+
+                        nb_km_found = 0;
+                        nb_km_query = 0;
+                    }
+
+                    nb_km_query += s.length() - k_ + 1;
+                }
+                else {
+
+                    // Push results to buffer, write buffer if overflow
+                    if (prev_file_id != 0xffffffffffffffffULL) {
+
+                        writeBinaryOutput();
+
+                        ++nb_queries_processed;
+                    }
+
+                    query_name = fp.getNameString(); // Query name is the record name
+
+                    nb_km_query = s.length() - k_ + 1;
+                    nb_km_found = 0;
+                }
+
+                for (auto& c : s) c &= 0xDF; // Set all characters in uppercase
+
+                const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   s, true, inexact_search, inexact_search,
+                                                                                            inexact_search, ratio, true);
+
+                if (inexact_search){
+
+                    Roaring r;
+
+                    for (const auto& p : v) r.add(p.first);
+
+                    nb_km_found += r.cardinality();
+                }
+                else nb_km_found += v.size();
+
+                prev_file_id = file_id;
+            }
+
+            // Flush rest of buffer result to final output
+            if (write_success && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                writeBinaryOutput();
+
+                ++nb_queries_processed;
+
+                if (write_success && (pos_buffer_out > 0)) {
+
+                    out.write(buffer_res, pos_buffer_out);
+
+                    write_success = (write_success && !out.fail());
+                }
+            }
+
+            delete[] buffer_res;
+
+            if (write_success && verbose) {
+
+                std::cout << "CompactedDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries. " << std::endl;
+                std::cout << "CompactedDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries. " << std::endl;
+            }
+        }
+        else {
+
+            struct ResultFileQuery {
+
+                size_t nb_km_found;
+                size_t nb_km_queries;
+                size_t nb_queries;
+
+                bool is_read;
+
+                ResultFileQuery() : nb_km_found(0), nb_km_queries(0), nb_queries(0), is_read(false) {}
+            };
+
+            bool stop = false;
+
+            std::vector<std::thread> workers; // need to keep track of threads so we can join them
+
+            std::mutex mtx_files_in, mtx_file_out;
+
+            std::atomic<size_t> nb_queries_found;
+            std::atomic<size_t> nb_queries_processed;
+
+            std::unordered_map<size_t, ResultFileQuery> um_file_id;
+
+            nb_queries_found = 0;
+            nb_queries_processed = 0;
+
+            auto writeBinaryOutput = [&](   const std::string& query_name,
+                                            const size_t nb_km_found, const size_t nb_km_query,
+                                            size_t& pos_buffer_out, char* buffer_res) {
+
+                const size_t nb_km_min = std::max(static_cast<size_t>(1), static_cast<size_t>(round(static_cast<double>(nb_km_query) * min_ratio_kmers)));
+                const size_t len_query_name = query_name.length();
+
+                const bool is_found = (nb_km_found >= nb_km_min);
+
+                if (pos_buffer_out + len_query_name + l_query_res >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+
+                    std::unique_lock<std::mutex> lock(mtx_file_out); // Get the output lock
+
+                    out.write(buffer_res, pos_buffer_out); // Write result buffer
+
+                    pos_buffer_out = 0; // Reset position to 0;
+                    write_success = (write_success && !out.fail());
+                }
+
+                // Copy new result to buffer
+                std::memcpy(buffer_res + pos_buffer_out, query_name.c_str(), len_query_name * sizeof(char));
+
+                if (is_found){
+
+                    std::memcpy(buffer_res + pos_buffer_out + len_query_name, query_pres, l_query_res * sizeof(char));
+
+                    ++nb_queries_found;
+                }
+                else std::memcpy(buffer_res + pos_buffer_out + len_query_name, query_abs, l_query_res * sizeof(char));
+
+                pos_buffer_out += len_query_name + l_query_res;
+            };
+
+            for (size_t t = 0; t < nb_threads; ++t){
+
+                workers.emplace_back(
+
+                    [&]{
+
+                        size_t pos_buffer_out = 0;
+
+                        char* buffer_res = new char[thread_seq_buf_sz];
+
+                        std::vector<std::string> buffer_seq;
+                        std::vector<std::string> buffer_name;
+                        std::vector<std::pair<size_t, std::pair<size_t, size_t>>> buffer_file_id;
+
+                        std::vector<std::pair<size_t, ResultFileQuery>> v_res_to_write;
+
+                        while (true) {
+
+                            bool l_stop;
+
+                            {
+                                size_t buffer_sz = 0;
+
+                                std::unique_lock<std::mutex> lock(mtx_files_in);
+
+                                l_stop = stop;
+
+                                if (files_as_queries) {
+
+                                    // Process results from previous search for this thread
+                                    // If all queries have completed for this file, push result to buffer 
+                                    for (const auto& p : buffer_file_id) {
+
+                                        typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(p.first);
+
+                                        if (it_um_file_id == um_file_id.end()) {
+
+                                            query_success = false;
+                                            break;
+                                        }
+                                        else {
+
+                                            it_um_file_id->second.nb_queries -= 1;
+
+                                            it_um_file_id->second.nb_km_found += p.second.first;
+                                            it_um_file_id->second.nb_km_queries += p.second.second;
+
+                                            if (it_um_file_id->second.is_read && (it_um_file_id->second.nb_queries == 0)) { // All queries for this file have been processed
+
+                                                v_res_to_write.push_back(*it_um_file_id);
+                                                um_file_id.erase(it_um_file_id);
+
+                                                ++nb_queries_processed;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (query_success) {
+
+                                    // Clear buffers for next round
+                                    buffer_seq.clear();
+                                    buffer_name.clear();
+                                    buffer_file_id.clear();
+
+                                    while (buffer_sz < thread_seq_buf_sz){
+
+                                        stop = !fp.read(s, file_id);
+
+                                        if (!stop) {
+
+                                            buffer_sz += s.length();
+
+                                            buffer_seq.push_back(std::move(s));
+
+                                            if (files_as_queries) buffer_file_id.push_back(std::pair<size_t, std::pair<size_t, size_t>>(file_id, std::pair<size_t, size_t>(0, 0)));
+                                            else buffer_name.push_back(std::string(fp.getNameString()));
+                                        }
+                                        else break;
+                                    }
+
+                                    if (files_as_queries) {
+
+                                        for (const auto p : buffer_file_id) {
+
+                                            std::pair<typename std::unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id = um_file_id.insert(std::pair<size_t, ResultFileQuery>(p.first, ResultFileQuery()));
+
+                                            p_it_um_file_id.first->second.nb_queries += 1;
+
+                                            if ((p.first != prev_file_id) && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                                                typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+
+                                                if (it_um_file_id == um_file_id.end()) {
+
+                                                    query_success = false;
+                                                    break;
+                                                }
+                                                else it_um_file_id->second.is_read = true;
+                                            }
+
+                                            prev_file_id = p.first;
+                                        }
+
+                                        // This thread is the last one reading from input file(s), make sure we annotate last query file as fully read
+                                        if (query_success && stop && !l_stop && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                                            typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+
+                                            if (it_um_file_id == um_file_id.end()) query_success = false;
+                                            else it_um_file_id->second.is_read = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!v_res_to_write.empty()) { // Write results to output if any result available in buffer
+
+                                for (const auto& p : v_res_to_write) writeBinaryOutput(query_filenames[p.first], p.second.nb_km_found, p.second.nb_km_queries, pos_buffer_out, buffer_res);
+
+                                v_res_to_write.clear();
+                            }
+
+                            if (l_stop) break;
+
+                            for (size_t i = 0; i < buffer_seq.size(); ++i){
+
+                                const size_t nb_km_query = buffer_seq[i].length() - k_ + 1;
+
+                                size_t nb_km_found = 0;
+
+                                for (auto& c : buffer_seq[i]) c &= 0xDF;
+
+                                const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffer_seq[i], true, inexact_search, inexact_search,
+                                                                                                            inexact_search, ratio, true);
+
+                                if (inexact_search){
+
+                                    Roaring r;
+
+                                    for (const auto& p : v) r.add(p.first);
+
+                                    nb_km_found = r.cardinality();
+                                }
+                                else nb_km_found = v.size();
+
+                                if (files_as_queries) {
+
+                                    buffer_file_id[i].second.first = nb_km_found;
+                                    buffer_file_id[i].second.second = nb_km_query;
+                                }
+                                else {
+
+                                    writeBinaryOutput(buffer_name[i], nb_km_found, nb_km_query, pos_buffer_out, buffer_res);
+
+                                    ++nb_queries_processed;
+                                }
+                            }
+                        }
+
+                        if (write_success && (pos_buffer_out > 0)) { // Flush unresult written to final output
+
+                            std::unique_lock<std::mutex> lock(mtx_file_out);
+
+                            out.write(buffer_res, pos_buffer_out);
+
+                            write_success = (write_success && !out.fail());
+                        }
+
+                        delete[] buffer_res;
+                    }
+                );
+            }
+
+            for (auto& t : workers) t.join();
+
+            if (files_as_queries && !um_file_id.empty()) query_success = false;
+
+            if (write_success && query_success && verbose) {
+
+                std::cout << "CompactedDBG::searchMinRatioKmer(): Processed " << nb_queries_processed << " queries. " << std::endl;
+                std::cout << "CompactedDBG::searchMinRatioKmer(): Found " << nb_queries_found << " queries. " << std::endl;
+            }
+        }
+    }
+
+    fp.close();
+
+    if (!query_success) std::cerr << "CompactedDBG::searchMinRatioKmer(): Unexpected error encountered. Please file an issue. Operation aborted." << std::endl;
+    if (!write_success) std::cerr << "CompactedDBG::searchMinRatioKmer(): Output stream is in a failed state and cannot be written to. Operation aborted." << std::endl;
+
+    return query_success && write_success;
+}
+
+template<typename U, typename G>
+bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames, std::ostream& out,
+                                const bool found_km_ratio_out, const bool inexact_search,
+                                const bool files_as_queries, const size_t nb_threads, const bool verbose) const {
 
      if (invalid){
 
@@ -1066,20 +1595,10 @@ bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames,
         return false;
     }
 
-    const std::string out_tmp = out_filename_prefix + ".tsv";
+    if (out.fail()) {
 
-    FILE* fp_tmp = fopen(out_tmp.c_str(), "w");
-
-    if (fp_tmp == NULL) {
-
-        std::cerr << "CompactedDBG::search(): Could not open file " << out_tmp << " for writing." << std::endl;
+        std::cerr << "CompactedDBG::search(): Output stream is in a failed state and cannot be written to." << std::endl;
         return false;
-    }
-    else {
-
-        fclose(fp_tmp);
-
-        if (std::remove(out_tmp.c_str()) != 0) std::cerr << "CompactedDBG::search(): Could not remove temporary file " << out_tmp << std::endl;
     }
 
     if (verbose) std::cout << "CompactedDBG::search(): Querying graph." << std::endl;
@@ -1088,99 +1607,215 @@ bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames,
 
     std::string s;
 
-    size_t file_id = 0;
+    bool write_success = true;
+    bool query_success = true;
 
-    //const size_t max_len_seq = 1024;
-    //const size_t thread_seq_buf_sz = 64 * max_len_seq;
-    const size_t max_len_seq = rndup(static_cast<size_t>(1024 + k_ - 1));
+    size_t file_id = 0;
+    size_t prev_file_id = 0xffffffffffffffffULL; // Please don't input 2^64-1 files :D
+
     const size_t thread_seq_buf_sz = BUFFER_SIZE;
 
     FileParser fp(query_filenames);
-
-    std::ofstream outfile;
-    std::ostream out(0);
-
-    outfile.open(out_tmp.c_str());
-    out.rdbuf(outfile.rdbuf());
-    //out.sync_with_stdio(false);
 
     const char query_pres[3] = {'\t', '1', '\n'};
     const char query_abs[3] = {'\t', '0', '\n'};
 
     const size_t l_query_res = 3;
 
-    // Write header to TSV file
-    out << "query_name\tpresence_query\n";
+    if (write_success) {
 
-    if (nb_threads == 1){
+        // Write header to TSV file
+        if (found_km_ratio_out) out << "query_name\tratio_found_kmers\n";
+        else out << "query_name\tnb_found_kmers\n";
 
-        char* buffer_res = new char[thread_seq_buf_sz];
-
-        size_t pos_buffer_out = 0;
-        size_t nb_queries_found = 0;
-
-        while (fp.read(s, file_id)){
-
-            bool is_found = false;
-
-            const size_t nb_km_min = static_cast<double>(s.length() - k_ + 1) * ratio_kmers;
-            const char* query_name = fp.getNameString();
-            const size_t l_query_name = strlen(query_name);
-
-            for (auto& c : s) c &= 0xDF;
-
-            const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   s, true, inexact_search, inexact_search,
-                                                                                        inexact_search, ratio_kmers, true);
-
-            if (inexact_search){
-
-                Roaring r;
-
-                for (const auto& p : v) r.add(p.first);
-
-                is_found = (r.cardinality() >= nb_km_min);
-            }
-            else is_found = (v.size() >= nb_km_min);
-
-            if (pos_buffer_out + l_query_name + l_query_res >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
-
-                out.write(buffer_res, pos_buffer_out); // Write result buffer
-                pos_buffer_out = 0; // Reset position to 0;
-            }
-
-            // Copy new result to buffer
-            std::memcpy(buffer_res + pos_buffer_out, query_name, l_query_name * sizeof(char));
-
-            if (is_found){
-
-                std::memcpy(buffer_res + pos_buffer_out + l_query_name, query_pres, l_query_res * sizeof(char));
-
-                ++nb_queries_found;
-            }
-            else std::memcpy(buffer_res + pos_buffer_out + l_query_name, query_abs, l_query_res * sizeof(char));
-
-            pos_buffer_out += l_query_name + l_query_res;
-        }
-
-        // Flush unresult written to final output
-        if (pos_buffer_out > 0) out.write(buffer_res, pos_buffer_out);
-
-        delete[] buffer_res;
-
-        if (verbose) std::cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries. " << std::endl;
+        write_success = (write_success && !out.fail());
     }
-    else {
 
-        {
+    if (write_success) {
+
+        if (nb_threads == 1){
+
+            const char* query_name = nullptr;
+
+            char* buffer_res = new char[thread_seq_buf_sz];
+
+            size_t pos_buffer_out = 0;
+
+            size_t nb_queries_processed = 0;
+
+            size_t nb_km_found = 0;
+            size_t nb_km_query = 0;
+
+            auto writeQuantifiedOutput = [&]() {
+
+                const std::string nb_found_str = std::to_string(found_km_ratio_out ? (static_cast<double>(nb_km_found) / static_cast<double>(nb_km_query)) : nb_km_found);
+
+                const size_t len_nb_found_str = nb_found_str.length();
+                const size_t len_query_name = strlen(query_name);
+
+                if (pos_buffer_out + len_query_name + len_nb_found_str + 2 >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+
+                    out.write(buffer_res, pos_buffer_out); // Write result buffer
+
+                    pos_buffer_out = 0; // Reset position to 0;
+                    write_success = (write_success && !out.fail());
+                }
+
+                // Add query name and tabulation to buffer
+                {
+                    std::memcpy(buffer_res + pos_buffer_out, query_name, len_query_name * sizeof(char));
+
+                    buffer_res[pos_buffer_out + len_query_name] = '\t';
+
+                    pos_buffer_out += len_query_name + 1;
+                }
+
+                // Add number of found km and end line character to buffer
+                {
+                    std::memcpy(buffer_res + pos_buffer_out, nb_found_str.c_str(), len_nb_found_str * sizeof(char));
+
+                    buffer_res[pos_buffer_out + len_nb_found_str] = '\n';
+
+                    pos_buffer_out += len_nb_found_str + 1;
+                }
+            };
+
+            while (write_success && query_success && fp.read(s, file_id)){
+
+                if (files_as_queries) {
+
+                    if (file_id != prev_file_id) {
+
+                        if (prev_file_id != 0xffffffffffffffffULL) { // Push results to buffer, write buffer if overflow
+
+                            writeQuantifiedOutput();
+
+                            ++nb_queries_processed;
+                        }
+
+                        query_name = query_filenames[file_id].c_str(); // Query name is the filename
+
+                        nb_km_found = 0;
+                        nb_km_query = 0;
+                    }
+
+                    nb_km_query += s.length() - k_ + 1;
+                }
+                else {
+
+                    // Push results to buffer, write buffer if overflow
+                    if (prev_file_id != 0xffffffffffffffffULL) {
+
+                        writeQuantifiedOutput();
+
+                        ++nb_queries_processed;
+                    }
+
+                    query_name = fp.getNameString(); // Query name is the record name
+
+                    nb_km_query = s.length() - k_ + 1;
+                    nb_km_found = 0;
+                }
+
+                for (auto& c : s) c &= 0xDF; // Set all characters in uppercase
+
+                const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   s, true, inexact_search, inexact_search,
+                                                                                            inexact_search, 1.0, true);
+
+                if (inexact_search){
+
+                    Roaring r;
+
+                    for (const auto& p : v) r.add(p.first);
+
+                    nb_km_found += r.cardinality();
+                }
+                else nb_km_found += v.size();
+
+                prev_file_id = file_id;
+            }
+
+            // Flush rest of buffer result to final output
+            if (write_success && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                writeQuantifiedOutput();
+
+                ++nb_queries_processed;
+
+                if (write_success && (pos_buffer_out > 0)) {
+
+                    out.write(buffer_res, pos_buffer_out);
+
+                    write_success = (write_success && !out.fail());
+                }
+            }
+
+            delete[] buffer_res;
+
+            if (write_success && verbose) std::cout << "CompactedDBG::search(): Processed " << nb_queries_processed << " queries. " << std::endl;
+        }
+        else {
+
+            struct ResultFileQuery {
+
+                size_t nb_km_found;
+                size_t nb_km_queries;
+                size_t nb_queries;
+
+                bool is_read;
+
+                ResultFileQuery() : nb_km_found(0), nb_km_queries(0), nb_queries(0), is_read(false) {}
+            };
+
             bool stop = false;
 
             std::vector<std::thread> workers; // need to keep track of threads so we can join them
 
-            std::mutex mutex_files_in, mutex_file_out;
+            std::mutex mtx_files_in, mtx_file_out;
 
-            std::atomic<size_t> nb_queries_found;
+            std::atomic<size_t> nb_queries_processed;
 
-            nb_queries_found = 0;
+            std::unordered_map<size_t, ResultFileQuery> um_file_id;
+
+            nb_queries_processed = 0;
+
+            auto writeQuantifiedOutput = [&](   const std::string& query_name,
+                                                const size_t nb_km_found, const size_t nb_km_query,
+                                                size_t& pos_buffer_out, char* buffer_res) {
+
+                const std::string nb_found_str = std::to_string(found_km_ratio_out ? (static_cast<double>(nb_km_found) / static_cast<double>(nb_km_query)) : nb_km_found);
+
+                const size_t len_nb_found_str = nb_found_str.length();
+                const size_t len_query_name = query_name.length();
+
+                if (pos_buffer_out + len_query_name + len_nb_found_str + 2 >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+
+                    std::unique_lock<std::mutex> lock(mtx_file_out); // Get the output lock
+
+                    out.write(buffer_res, pos_buffer_out); // Write result buffer
+
+                    pos_buffer_out = 0; // Reset position to 0;
+                    write_success = (write_success && !out.fail());
+                }
+
+                // Add query name and tabulation to buffer
+                {
+                    std::memcpy(buffer_res + pos_buffer_out, query_name.c_str(), len_query_name * sizeof(char));
+
+                    buffer_res[pos_buffer_out + len_query_name] = '\t';
+
+                    pos_buffer_out += len_query_name + 1;
+                }
+
+                // Add number of found km and end line character to buffer
+                {
+                    std::memcpy(buffer_res + pos_buffer_out, nb_found_str.c_str(), len_nb_found_str * sizeof(char));
+
+                    buffer_res[pos_buffer_out + len_nb_found_str] = '\n';
+
+                    pos_buffer_out += len_nb_found_str + 1;
+                }
+            };
 
             for (size_t t = 0; t < nb_threads; ++t){
 
@@ -1188,54 +1823,135 @@ bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames,
 
                     [&]{
 
+                        size_t pos_buffer_out = 0;
+
                         char* buffer_res = new char[thread_seq_buf_sz];
 
-                        std::vector<std::string> buffers_seq;
-                        std::vector<std::string> buffers_name;
+                        std::vector<std::string> buffer_seq;
+                        std::vector<std::string> buffer_name;
+                        std::vector<std::pair<size_t, std::pair<size_t, size_t>>> buffer_file_id;
+
+                        std::vector<std::pair<size_t, ResultFileQuery>> v_res_to_write;
 
                         while (true) {
 
+                            bool l_stop;
+
                             {
-                                if (stop) {
-
-                                    delete[] buffer_res;
-
-                                    return;
-                                }
-
                                 size_t buffer_sz = 0;
 
-                                std::unique_lock<std::mutex> lock(mutex_files_in);
+                                std::unique_lock<std::mutex> lock(mtx_files_in);
 
-                                stop = !fp.read(s, file_id);
+                                l_stop = stop;
 
-                                while (!stop){
+                                if (files_as_queries) {
 
-                                    buffer_sz += s.length();
+                                    // Process results from previous search for this thread
+                                    // If all queries have completed for this file, push result to buffer 
+                                    for (const auto& p : buffer_file_id) {
 
-                                    buffers_seq.push_back(std::move(s));
-                                    buffers_name.push_back(std::string(fp.getNameString()));
+                                        typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(p.first);
 
-                                    if (buffer_sz >= thread_seq_buf_sz) break;
-                                    else stop = !fp.read(s, file_id);
+                                        if (it_um_file_id == um_file_id.end()) {
+
+                                            query_success = false;
+                                            break;
+                                        }
+                                        else {
+
+                                            it_um_file_id->second.nb_queries -= 1;
+
+                                            it_um_file_id->second.nb_km_found += p.second.first;
+                                            it_um_file_id->second.nb_km_queries += p.second.second;
+
+                                            if (it_um_file_id->second.is_read && (it_um_file_id->second.nb_queries == 0)) { // All queries for this file have been processed
+
+                                                v_res_to_write.push_back(*it_um_file_id);
+                                                um_file_id.erase(it_um_file_id);
+
+                                                ++nb_queries_processed;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (query_success) {
+
+                                    // Clear buffers for next round
+                                    buffer_seq.clear();
+                                    buffer_name.clear();
+                                    buffer_file_id.clear();
+
+                                    while (buffer_sz < thread_seq_buf_sz){
+
+                                        stop = !fp.read(s, file_id);
+
+                                        if (!stop) {
+
+                                            buffer_sz += s.length();
+
+                                            buffer_seq.push_back(std::move(s));
+
+                                            if (files_as_queries) buffer_file_id.push_back(std::pair<size_t, std::pair<size_t, size_t>>(file_id, std::pair<size_t, size_t>(0, 0)));
+                                            else buffer_name.push_back(std::string(fp.getNameString()));
+                                        }
+                                        else break;
+                                    }
+
+                                    if (files_as_queries) {
+
+                                        for (const auto p : buffer_file_id) {
+
+                                            std::pair<typename std::unordered_map<size_t, ResultFileQuery>::iterator, bool> p_it_um_file_id = um_file_id.insert(std::pair<size_t, ResultFileQuery>(p.first, ResultFileQuery()));
+
+                                            p_it_um_file_id.first->second.nb_queries += 1;
+
+                                            if ((p.first != prev_file_id) && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                                                typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+
+                                                if (it_um_file_id == um_file_id.end()) {
+
+                                                    query_success = false;
+                                                    break;
+                                                }
+                                                else it_um_file_id->second.is_read = true;
+                                            }
+
+                                            prev_file_id = p.first;
+                                        }
+
+                                        // This thread is the last one reading from input file(s), make sure we annotate last query file as fully read
+                                        if (query_success && stop && !l_stop && (prev_file_id != 0xffffffffffffffffULL)) {
+
+                                            typename std::unordered_map<size_t, ResultFileQuery>::iterator it_um_file_id = um_file_id.find(prev_file_id);
+
+                                            if (it_um_file_id == um_file_id.end()) query_success = false;
+                                            else it_um_file_id->second.is_read = true;
+                                        }
+                                    }
                                 }
                             }
 
-                            size_t pos_buffer_out = 0;
+                            if (!v_res_to_write.empty()) { // Write results to output if any result available in buffer
 
-                            const size_t buffers_seq_sz = buffers_seq.size();
+                                for (const auto& p : v_res_to_write) writeQuantifiedOutput(query_filenames[p.first], p.second.nb_km_found, p.second.nb_km_queries, pos_buffer_out, buffer_res);
 
-                            for (size_t i = 0; i < buffers_seq_sz; ++i){
+                                v_res_to_write.clear();
+                            }
 
-                                bool is_found = false;
+                            if (l_stop) break;
 
-                                const size_t nb_km_min = static_cast<double>(buffers_seq[i].length() - k_ + 1) * ratio_kmers;
-                                const size_t l_name = buffers_name[i].length();
+                            for (size_t i = 0; i < buffer_seq.size(); ++i){
 
-                                for (auto& c : buffers_seq[i]) c &= 0xDF;
+                                const size_t nb_km_query = buffer_seq[i].length() - k_ + 1;
 
-                                const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffers_seq[i], true, inexact_search, inexact_search,
-                                                                                                            inexact_search, ratio_kmers, true);
+                                size_t nb_km_found = 0;
+
+                                for (auto& c : buffer_seq[i]) c &= 0xDF;
+
+                                const std::vector<std::pair<size_t, const_UnitigMap<U, G>>> v = dbg.searchSequence(   buffer_seq[i], true, inexact_search, inexact_search,
+                                                                                                            inexact_search, 1.0, true);
 
                                 if (inexact_search){
 
@@ -1243,43 +1959,31 @@ bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames,
 
                                     for (const auto& p : v) r.add(p.first);
 
-                                    is_found = (r.cardinality() >= nb_km_min);
+                                    nb_km_found = r.cardinality();
                                 }
-                                else is_found = (v.size() >= nb_km_min);
+                                else nb_km_found = v.size();
 
-                                if (pos_buffer_out + l_name + l_query_res >= thread_seq_buf_sz){ // If next result cannot fit in the buffer
+                                if (files_as_queries) {
 
-                                    std::unique_lock<std::mutex> lock(mutex_file_out); // Get the output lock
-
-                                    out.write(buffer_res, pos_buffer_out); // Write result buffer
-
-                                    pos_buffer_out = 0; // Reset position to 0;
+                                    buffer_file_id[i].second.first = nb_km_found;
+                                    buffer_file_id[i].second.second = nb_km_query;
                                 }
+                                else {
 
-                                // Copy new result to buffer
-                                std::memcpy(buffer_res + pos_buffer_out, buffers_name[i].c_str(), l_name * sizeof(char));
+                                    writeQuantifiedOutput(buffer_name[i], nb_km_found, nb_km_query, pos_buffer_out, buffer_res);
 
-                                if (is_found){
-
-                                    std::memcpy(buffer_res + pos_buffer_out + l_name, query_pres, l_query_res * sizeof(char));
-
-                                    ++nb_queries_found;
+                                    ++nb_queries_processed;
                                 }
-                                else std::memcpy(buffer_res + pos_buffer_out + l_name, query_abs, l_query_res * sizeof(char));
-
-                                pos_buffer_out += l_name + l_query_res;
                             }
+                        }
 
-                            if (pos_buffer_out > 0){ // Flush unresult written to final output
+                        if (write_success && (pos_buffer_out > 0)) { // Flush unresult written to final output
 
-                                std::unique_lock<std::mutex> lock(mutex_file_out);
+                            std::unique_lock<std::mutex> lock(mtx_file_out);
 
-                                out.write(buffer_res, pos_buffer_out);
-                            }
+                            out.write(buffer_res, pos_buffer_out);
 
-                            // Clear buffers for next round
-                            buffers_seq.clear();
-                            buffers_name.clear();
+                            write_success = (write_success && !out.fail());
                         }
 
                         delete[] buffer_res;
@@ -1289,14 +1993,18 @@ bool CompactedDBG<U, G>::search(const std::vector<std::string>& query_filenames,
 
             for (auto& t : workers) t.join();
 
-            if (verbose) std::cout << "CompactedDBG::search(): Found " << nb_queries_found << " queries. " << std::endl;
+            if (files_as_queries && !um_file_id.empty()) query_success = false;
+
+            if (write_success && query_success && verbose) std::cout << "CompactedDBG::search(): Processed " << nb_queries_processed << " queries. " << std::endl;
         }
     }
 
-    outfile.close();
     fp.close();
 
-    return true;
+    if (!query_success) std::cerr << "CompactedDBG::search(): Unexpected error encountered. Please file an issue. Operation aborted." << std::endl;
+    if (!write_success) std::cerr << "CompactedDBG::search(): Output stream is in a failed state and cannot be written to. Operation aborted." << std::endl;
+
+    return query_success && write_success;
 }
 
 #endif

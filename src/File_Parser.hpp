@@ -3,8 +3,7 @@
 
 #include <sstream>
 #include <stdio.h>
-#include <string>
-#include <vector>
+#include <string.h>
 #include <zlib.h>
 
 #include "Common.hpp"
@@ -50,8 +49,8 @@ class FileParser {
 
                         if (format == -1){
 
-                            std::cerr << "FileParser::FileParser(): Input file " << s << " does not exist" 
-                            << ", is ill-formed or is not in FASTA/FASTQ/GFA format. Continuing without it." << std::endl;
+                            std::cerr << "FileParser::FileParser(): Input file " << s << " does not exist";
+                            std::cerr << ", is ill-formed or is not in FASTA/FASTQ/GFA format. Continuing without it." << std::endl;
                         }
                         else if (format == 0) files_fastx.push_back(s); // FASTA
                         else if (format == 1) files_fastx.push_back(s); // FASTQ

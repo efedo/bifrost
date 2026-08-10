@@ -14,7 +14,6 @@
 
 #include "zstr.hpp"
 
-
 class GFA_Parser {
 
     struct Sequence {

@@ -16,9 +16,9 @@ template<typename U> using const_UnitigColorMap = const_UnitigMap<DataAccessor<U
 namespace std
 {
     template<>
-    struct hash<pair<Kmer, size_t>> {
+    struct hash<std::pair<Kmer, size_t>> {
 
-        size_t operator()(pair<Kmer, size_t> const& p) const {
+        size_t operator()(std::pair<Kmer, size_t> const& p) const {
 
             return (2 * p.second + 1) * p.first.hash();
         }

@@ -12,6 +12,8 @@
 
 
 
+using namespace std;
+
 TinyBitmap::TinyBitmap() : tiny_bmp(nullptr) {}
 
 TinyBitmap::TinyBitmap(const TinyBitmap& o) : tiny_bmp(nullptr) {

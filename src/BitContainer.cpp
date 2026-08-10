@@ -1,5 +1,7 @@
 #include "BitContainer.hpp"
 
+using namespace std;
+
 BitContainer::BitContainer() : setBits(localBitVector) {}
 
 BitContainer::BitContainer(const BitContainer& o) {

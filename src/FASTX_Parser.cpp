@@ -1,5 +1,6 @@
 #include "FASTX_Parser.hpp"
 
+using namespace std;
 FastqFile::FastqFile() : kseq(NULL), file_no(0) { fnit = fnames.end(); }
 
 FastqFile::FastqFile(const std::vector<std::string> files) : kseq(NULL), fnames(files), file_no(0) {

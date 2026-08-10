@@ -1,8 +1,6 @@
 #ifndef BIFROST_COMPACTED_DBG_HPP
 #define BIFROST_COMPACTED_DBG_HPP
 
-#include <stddef.h>
-#include <limits>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -10,7 +8,6 @@
 #include <cstdio>
 #include <climits>
 #include <functional>
-#include <getopt.h>
 #include <iostream>
 #include <map>
 #include <set>
@@ -52,9 +49,6 @@
 #define RESERVED_ID (0xffffffff)
 
 #define DEFAULT_K 31
-
-#define DEFAULT_G_DEC1 8
-#define DEFAULT_G_DEC2 4
 
 /** @file src/CompactedDBG.hpp
 * Interface for the Compacted de Bruijn graph API.
@@ -147,38 +141,43 @@ struct CDBG_Build_opt {
     // such as CompactedDBG<U, G>::simplify, CompactedDBG<U, G>::read or
     // CompactedDBG<U, G>::write.
 
-    int k, g;
+    int k, g; // k-mer and g-mer (minimizer) length
 
-    bool build;
-    bool update;
-    bool query;
+    bool build; // Build command
+    bool update; // Update command
+    bool query; // Query command
 
-    bool clipTips;
-    bool deleteIsolated;
-    bool useMercyKmers;
+    bool clipTips; // Clip tips after building
+    bool deleteIsolated; // Delete isolated unitigs (unitigs that are their own connected component and short than k k-mers)
+    bool useMercyKmers; // Deprecated, do not use
 
-    bool outputGFA;
-    bool outputFASTA;
-    bool outputBFG;
+    bool outputGFA; // Output graph in GFA format
+    bool outputFASTA; // Output graph in FASTA format (incompatible with colors)
+    bool outputBFG;  // Output graph in binary BFG format
 
-    bool compressOutput;
-    bool inexact_search;
+    bool compressOutput; // Compress output GFA/FASTA graph
+    bool inexact_search; // Allow one indel or substitution when querying for k-mers
+    bool files_as_queries; // All records in an input query file constitute one query (rather than one record = one query)
 
-    bool writeIndexFile;
+    bool get_ratio_found_km; // Return the ratio of found k-mers when querying
 
-    double ratio_kmers;
+    bool writeIndexFile; // Create a Bifrost index file for the graph. Enables faster graph loading in memory.
 
-    std::string prefixFilenameOut;
+    double min_ratio_kmers_search; // Ratio of k-mers shared between query and graph to report the query as "present"
 
-    std::string filename_graph_in;
-    std::string filename_index_in;
+    std::string prefixTmp; // Prefix of the tmp directory used by Bifrost
+    std::string prefixFilenameOut; // Prefix of the output filename(s)
 
-    std::vector<std::string> filename_query_in;
+    std::string filename_graph_in; // Filename of the input graph
+    std::string filename_index_in; // Filename of the input graph index
 
-    CDBG_Build_opt() :  nb_threads(1), k(DEFAULT_K), g(-1), nb_bits_kmers_bf(14), ratio_kmers(0.8), min_count_km(1),
+    std::vector<std::string> filename_query_in; // Query filenames
+
+    CDBG_Build_opt() :  nb_threads(1), k(DEFAULT_K), g(-1), nb_bits_kmers_bf(24), min_count_km(1),
                         build(false), update(false), query(false), clipTips(false), deleteIsolated(false),
                         inexact_search(false), writeIndexFile(true), useMercyKmers(false), outputGFA(true),
-                        outputFASTA(false), outputBFG(false), compressOutput(true), verbose(false) {}
+                        outputFASTA(false), outputBFG(false), compressOutput(true), verbose(false),
+                        get_ratio_found_km(false), files_as_queries(false), min_ratio_kmers_search(0.0) {}
 };
 
 /** @typedef const_UnitigMap
@@ -384,13 +383,13 @@ class CompactedDBG {
         CompactedDBG<U, G>& operator+=(const CompactedDBG<U, G>& o);
 
         /** Equality operator.
-        * @return a boolean indicating if two compacted de Bruijn graphs have the same unitigs (does not compare the data
+        * @return a boolean indicating whether two compacted de Bruijn graphs have the same unitigs (does not compare the data
         * associated with the unitigs).
         */
         bool operator==(const CompactedDBG<U, G>& o) const;
 
         /** Inequality operator.
-        * @return a boolean indicating if two compacted de Bruijn graphs have different unitigs (does not compare the data
+        * @return a boolean indicating whether two compacted de Bruijn graphs have different unitigs (does not compare the data
         * associated with the unitigs).
         */
         inline bool operator!=(const CompactedDBG<U, G>& o) const;
@@ -401,29 +400,29 @@ class CompactedDBG {
 
         /** Build the Compacted de Bruijn graph.
         * @param opt is a structure from which the members are parameters of this function. See CDBG_Build_opt.
-        * @return boolean indicating if the graph has been built successfully.
+        * @return boolean indicating whether the graph has been built successfully.
         */
         bool build(CDBG_Build_opt& opt);
 
         /** Simplify the Compacted de Bruijn graph: clip short (< 2k length) tips and/or delete short (< 2k length) isolated unitigs.
         * @param delete_short_isolated_unitigs is a boolean indicating short isolated unitigs must be removed.
         * @param clip_short_tips is a boolean indicating short tips must be clipped.
-        * @param verbose is a boolean indicating if information messages must be printed during the function execution.
-        * @return boolean indicating if the graph has been simplified successfully.
+        * @param verbose is a boolean indicating whether information messages must be printed during the function execution.
+        * @return boolean indicating whether the graph has been simplified successfully.
         */
         bool simplify(const bool delete_short_isolated_unitigs = true, const bool clip_short_tips = true, const bool verbose = false);
 
         /** Write the Compacted de Bruijn graph to disk (GFA1 format).
         * @param output_fn is a string containing the name of the file in which the graph will be written.
         * @param nb_threads is a number indicating how many threads can be used to write the graph to disk.
-        * @param GFA_output indicates if the graph will be output in GFA format.
-        * @param FASTA_output indicates if the graph will be output in FASTA format.
-        * @param BFG_output indicates if the graph will be output in BFG/BFI format.
-        * @param write_index_file indicates if an index file is written to disk. Index files enable faster graph loading.
+        * @param GFA_output is a boolean indicating whether the graph will be output in GFA format.
+        * @param FASTA_output is a boolean indicating whether the graph will be output in FASTA format.
+        * @param BFG_output is a boolean indicating whether the graph will be output in BFG/BFI format.
+        * @param write_index_file is a boolean indicating whether an index file is written to disk. Index files enable faster graph loading.
         * This parameter is discarded if BFG format output is selected (index output is required then).
-        * @param compressed_output indicates if the output file is compressed.
-        * @param verbose is a boolean indicating if information messages must be printed during the function execution.
-        * @return boolean indicating if the graph has been written successfully.
+        * @param compressed_output is a boolean indicating whether the output file is compressed.
+        * @param verbose is a boolean indicating whether information messages must be printed during the function execution.
+        * @return boolean indicating whether the graph has been written successfully.
         */
         bool write( const std::string& output_fn, const size_t nb_threads = 1, const bool GFA_output = true, const bool FASTA_output = false,
                     const bool BFG_output = false, const bool write_index_file = true, const bool compressed_output = false,
@@ -437,8 +436,8 @@ class CompactedDBG {
         * call to this function.
         * @param input_graph_fn is a string containing the name of the graph file to read.
         * @param nb_threads is a number indicating how many threads can be used to read the graph from disk.
-        * @param verbose is a boolean indicating if information messages must be printed during the function execution.
-        * @return boolean indicating if the graph has been read successfully.
+        * @param verbose is a boolean indicating whether information messages must be printed during the function execution.
+        * @return boolean indicating whether the graph has been read successfully.
         */
         bool read(const std::string& input_graph_fn, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -450,14 +449,14 @@ class CompactedDBG {
         * @param input_graph_fn is a string containing the name of the graph file to read.
         * @param input_index_fn is a string containing the name of the index file to read.
         * @param nb_threads is a number indicating how many threads can be used to read the graph from disk.
-        * @param verbose is a boolean indicating if information messages must be printed during the function execution.
-        * @return boolean indicating if the graph has been read successfully.
+        * @param verbose is a boolean indicating whether information messages must be printed during the function execution.
+        * @return boolean indicating whether the graph has been read successfully.
         */
         bool read(const std::string& input_graph_fn, const std::string& input_index_fn, const size_t nb_threads = 1, const bool verbose = false);
 
         /** Find the unitig containing the queried k-mer in the Compacted de Bruijn graph.
         * @param km is the queried k-mer (see Kmer class). It does not need to be a canonical k-mer.
-        * @param extremities_only is a boolean indicating if the k-mer must be searched only in the unitig heads and tails (extremities_only = true).
+        * @param extremities_only is a boolean indicating whether the k-mer must be searched only in the unitig heads and tails (extremities_only = true).
         * By default, the k-mer is searched everywhere (extremities_only = false) but is is slightly slower than looking only in the unitig heads and tails.
         * @return UnitigMap<U, G> object containing the k-mer mapping information to the unitig containing the queried k-mer (if present).
         * If the queried k-mer is not found, UnitigMap::isEmpty = true (see UnitigMap class).
@@ -466,7 +465,7 @@ class CompactedDBG {
 
         /** Find the unitig containing the queried k-mer in the Compacted de Bruijn graph.
         * @param km is the queried k-mer (see Kmer class). It does not need to be a canonical k-mer.
-        * @param extremities_only is a boolean indicating if the k-mer must be searched only in the unitig heads and tails (extremities_only = true).
+        * @param extremities_only is a boolean indicating whether the k-mer must be searched only in the unitig heads and tails (extremities_only = true).
         * By default, the k-mer is searched everywhere (extremities_only = false) but is is slightly slower than looking only in the unitig heads and tails.
         * @return const_UnitigMap<U, G> object containing the k-mer mapping information to the unitig having the queried k-mer (if present).
         * If the k-mer is not found, const_UnitigMap::isEmpty = true (see UnitigMap class).
@@ -495,25 +494,25 @@ class CompactedDBG {
 
         /** Performs exact and/or inexact search of the k-mers of a sequence query in the Compacted de Bruijn graph.
         * @param s is a string representing the sequence to be searched (the query).
-        * @param exact is a boolean indicating if the exact k-mers of string s must be searched.
-        * @param insertion is a boolean indicating if the inexact k-mers of string s, with one insertion, must be searched.
-        * @param deletion is a boolean indicating if the inexact k-mers of string s, with one deletion, must be searched.
-        * @param substitution is a boolean indicating if the inexact k-mers of string s, with one substitution, must be searched.
+        * @param exact is a boolean indicating whether the exact k-mers of string s must be searched.
+        * @param insertion is a boolean indicating whether the inexact k-mers of string s, with one insertion, must be searched.
+        * @param deletion is a boolean indicating whether the inexact k-mers of string s, with one deletion, must be searched.
+        * @param substitution is a boolean indicating whether the inexact k-mers of string s, with one substitution, must be searched.
         * @param or_exclusive_match is a boolean indicating to NOT search for the inexact k-mers at any given position in s
         * if the exact corresponding k-mer at that position is found in the graph. This option might lead to a substantial running time decrease.
         * @return a vector of pair<size_t, UnitigMap<U, G>> objects. Each such pair has two elements: the position of the k-mer match in sequence s
         * and the corresponding k-mer match in the graph. Note that no information is given on whether the match is exact or inexact, nor on what edit
         * operation makes the match to be inexact or at what position the edit operation takes place.
         */
-        std::vector<std::pair<size_t, UnitigMap<U, G>>> searchSequence(   const std::string& s, const bool exact, const bool insertion, const bool deletion,
+        std::vector<std::pair<size_t, UnitigMap<U, G>>> searchSequence( const std::string& s, const bool exact, const bool insertion, const bool deletion,
                                                                 const bool substitution, const bool or_exclusive_match = false);
 
         /** Performs exact and/or inexact search of the k-mers of a sequence query in the Compacted de Bruijn graph.
         * @param s is a string representing the sequence to be searched (the query).
-        * @param exact is a boolean indicating if the exact k-mers of string s must be searched.
-        * @param insertion is a boolean indicating if the inexact k-mers of string s, with one insertion, must be searched.
-        * @param deletion is a boolean indicating if the inexact k-mers of string s, with one deletion, must be searched.
-        * @param substitution is a boolean indicating if the inexact k-mers of string s, with one substitution, must be searched.
+        * @param exact is a boolean indicating whether the exact k-mers of string s must be searched.
+        * @param insertion is a boolean indicating whether the inexact k-mers of string s, with one insertion, must be searched.
+        * @param deletion is a boolean indicating whether the inexact k-mers of string s, with one deletion, must be searched.
+        * @param substitution is a boolean indicating whether the inexact k-mers of string s, with one substitution, must be searched.
         * @param or_exclusive_match is a boolean indicating to NOT search for the inexact k-mers at any given position in s
         * if the exact corresponding k-mer at that position is found in the graph. This option might lead to a substantial running time decrease.
         * @return a vector of pair<size_t, const_UnitigMap<U, G>> objects. Each such pair has two elements: the position of the k-mer match in sequence s
@@ -523,19 +522,97 @@ class CompactedDBG {
         std::vector<std::pair<size_t, const_UnitigMap<U, G>>> searchSequence( const std::string& s, const bool exact, const bool insertion, const bool deletion,
                                                                     const bool substitution, const bool or_exclusive_match = false) const;
 
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers, and write the results
+        * to disk in TSV format. Output is a binary matrix (|queries|,1) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out_filename_prefix is the prefix of the output filename to which results are written.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file constitute one query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix, const double min_ratio_kmers,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const size_t verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers, and write the results
+        * to an opened output stream. Output is a binary matrix (|queries|,1) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out is an output stream to which results are written. It must be opened prior to this function call and
+        * it is not closed by this function.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file constitute one query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out, const double min_ratio_kmers,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const size_t verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records and write the number of found k-mers to disk in TSV format.
+        * Output is a uint or float matrix (|queries|,1) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out_filename_prefix is the prefix of the output filename to which results are written.
+        * @param found_km_ratio_out is a boolean indicating to output the ratio of found k-mers from each query rather than
+        * the number of found k-mers.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool search(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
+                    const bool found_km_ratio_out = false, const bool inexact_search = false,
+                    const bool files_as_queries = false, const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records and write the number of found k-mers to an opened output stream.
+        * Output is a uint or float matrix (|queries|,1) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out is an output stream to which results are written. It must be opened prior to this function call and
+        * it is not closed by this function.
+        * @param found_km_ratio_out is a boolean indicating to output the ratio of found k-mers from each query rather than
+        * the number of found k-mers.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool search(const std::vector<std::string>& query_filenames, std::ostream& out,
+                    const bool found_km_ratio_out = false, const bool inexact_search = false,
+                    const bool files_as_queries = false, const size_t nb_threads = 1, const bool verbose = false) const;
+
         /** Add a sequence to the Compacted de Bruijn graph. Non-{A,C,G,T} characters such as Ns are discarded.
         * The function automatically breaks the sequence into unitig(s). Those unitigs can be stored as the reverse-complement
         * of the input sequence.
         * @param seq is a string containing the sequence to insert.
-        * @param verbose is a boolean indicating if information messages must be printed during the function execution.
-        * @return a boolean indicating if the sequence was successfully inserted in the graph.
+        * @param verbose is a boolean indicating whether information messages must be printed during the function execution.
+        * @return a boolean indicating whether the sequence was successfully inserted in the graph.
         */
         bool add(const std::string& seq, const bool verbose = false);
 
         /** Remove a unitig from the Compacted de Bruijn graph.
         * @param um is a UnitigMap object containing the information of the unitig to remove from the graph.
-        * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the unitig was successfully removed from the graph.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return a boolean indicating whether the unitig was successfully removed from the graph.
         */
         bool remove(const const_UnitigMap<U, G>& um, const bool verbose = false);
 
@@ -548,8 +625,8 @@ class CompactedDBG {
         * with a vector of CompactedDBG as input.
         * @param o is a constant reference to the compacted de Bruijn graph to merge.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
-        * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graph has been successfully merged.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return a boolean indicating whether the graph has been successfully merged.
         */
         bool merge(const CompactedDBG& o, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -560,8 +637,8 @@ class CompactedDBG {
         * class MyUnitigData which are also present in its base class CCDBG_Data_t<MyUnitigData>.
         * @param v is a constant reference to a vector of colored and compacted de Bruijn graphs to merge.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
-        * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graphs have been successfully merged.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return a boolean indicating whether the graphs have been successfully merged.
         */
         bool merge(const std::vector<CompactedDBG>& v, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -625,23 +702,11 @@ class CompactedDBG {
         */
         inline const G* getData() const { return data.getData(); }
 
-        bool search(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
-                    const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
-                    const size_t verbose = false) const;
-
         bool writeBinary(const std::string& fn, const size_t nb_threads = 1) const;
         bool writeBinary(std::ostream& out, const size_t nb_threads = 1) const;
 
-        bool readBinary(const std::string& fn, bool static_m=false, uint32_t threads=1);
-        bool readBinary(std::istream& in, std::vector<Minimizer>& minz, uint32_t threads=1);
-        bool readBinary(std::istream& in, boophf_t* mphf, uint32_t threads=1);
-
-        bool readMinimizers(std::istream& in, std::vector<Minimizer>& minz, uint32_t threads=1);
-        size_t writeMinimizers(std::ostream& out);
-        void clearAndGetMinimizers(std::vector<Minimizer>& minz);
-
-
-        void to_static(uint32_t threads=1, float gamma=2.0);
+        bool readBinary(const std::string& fn);
+        bool readBinary(std::istream& in);
 
     protected:
 
@@ -669,11 +734,8 @@ class CompactedDBG {
         std::pair<uint64_t, bool> readBinaryGraph(std::istream& in);
         std::pair<uint64_t, bool> readBinaryGraph(const std::string& fn);
 
-        bool readBinaryMinimizers(std::istream& in, const uint64_t checksum, std::vector<Minimizer>& minz, uint32_t threads=1);
-
-        bool readBinaryIndex(std::istream& in, const uint64_t checksum, std::vector<Minimizer>& minz, uint32_t threads=1);
-        bool readBinaryIndex(std::istream& in, const uint64_t checksum, boophf_t* mphf, uint32_t threads=1);
-        bool readBinaryIndex(const std::string& fn, const uint64_t checksum, bool static_m=false, uint32_t threads=1);
+        bool readBinaryIndex(std::istream& in, const uint64_t checksum);
+        bool readBinaryIndex(const std::string& fn, const uint64_t checksum);
 
         bool readBinaryIndexHead(const std::string& fn, size_t& file_format_version, size_t& v_unitigs_sz, size_t& km_unitigs_sz,
                                 size_t& h_kmers_ccov_sz, size_t& hmap_min_unitigs_sz, uint64_t& read_checksum) const;
@@ -685,20 +747,25 @@ class CompactedDBG {
 
         CompactedDBG<U, G>& toDataGraph(CompactedDBG<void, void>&& o, const size_t nb_threads = 1);
 
-        std::pair<bool, std::pair<BlockedBloomFilter, Roaring>> filter(const CDBG_Build_opt& opt, const size_t nb_unique_kmers, const size_t nb_non_unique_kmers);
-        bool construct(const CDBG_Build_opt& opt, BlockedBloomFilter& bf, Roaring& r, const size_t nb_unique_minimizers, const size_t nb_non_unique_minimizers);
+        bool filter(const CDBG_Build_opt& opt, DualBlockedBloomFilter& bf_d, Roaring& r, const size_t nb_unique_kmers, const size_t nb_non_unique_kmers);
+
+        bool construct(const CDBG_Build_opt& opt, DualBlockedBloomFilter& bf, Roaring& r, const size_t nb_unique_minimizers, const size_t nb_non_unique_minimizers, const size_t nb_unique_kmers, const size_t nb_non_unique_kmers);
+        bool construct_dev(const CDBG_Build_opt& opt, DualBlockedBloomFilter& bf, Roaring& r, const size_t nb_unique_minimizers, const size_t nb_non_unique_minimizers, const size_t nb_unique_kmers, const size_t nb_non_unique_kmers);
 
         void addUnitigSequence(const Kmer km, const std::string& seq, const size_t pos_match_km, const size_t len_match_km, LockGraph& lck_g, const bool map_read = true);
-        //void addUnitigSequence(const std::string& seq);
+        void addUnitigSequence(const std::string& seq);
 
         size_t findUnitigSequenceBBF(const BlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip);
-        size_t findUnitigSequenceBBF(const BlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip, LockGraph& lck_g);
+        size_t findUnitigSequenceBBF(const DualBlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip);
+        //size_t findUnitigSequenceBBF(const BlockedBloomFilter& bf, const Kmer km, std::string& s, bool& isIsolated, std::vector<Kmer>& l_ignored_km_tip, LockGraph& lck_g);
 
-        bool bwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& front, char& c, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
-        bool fwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& end, char& c, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
+        std::pair<int, RepHash> bwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
+        std::pair<int, RepHash> bwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& front, const RepHash& rep_front, const char* front_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
+        
+        std::pair<int, RepHash> fwStepBBF(const BlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
+        std::pair<int, RepHash> fwStepBBF(const DualBlockedBloomFilter& bf, const Kmer km, Kmer& end, const RepHash& rep_end, const char* end_str, bool& has_no_neighbor, std::vector<Kmer>& l_ignored_km_tip, const bool check_fp_cand = true) const;
 
         inline size_t find(const preAllocMinHashIterator<RepHash>& it_min_h) const {
-
             const int pos = it_min_h.getPosition();
             return (hmap_min_unitigs.find(Minimizer(it_min_h.s + pos).rep()) != hmap_min_unitigs.end() ? 0 : pos - it_min_h.p);
         }
@@ -707,8 +774,6 @@ class CompactedDBG {
         const_UnitigMap<U, G> find(const char* s, const size_t pos_km, const minHashIterator<RepHash>& it_min, const bool extremities_only = false) const;
 
         UnitigMap<U, G> find(const Kmer& km, const preAllocMinHashIterator<RepHash>& it_min_h);
-
-        //std::vector<const_UnitigMap<U, G>> find(const Minimizer& minz) const;
 
         std::vector<const_UnitigMap<U, G>> findPredecessors(const Kmer& km, const bool extremities_only = false) const;
         std::vector<const_UnitigMap<U, G>> findSuccessors(const Kmer& km, const size_t limit = 4, const bool extremities_only = false) const;
@@ -724,7 +789,7 @@ class CompactedDBG {
 
         bool addUnitig(const std::string& str_unitig, const size_t id_unitig);
         bool addUnitig(const std::string& str_unitig, const size_t id_unitig, const size_t id_unitig_r, const size_t is_short_r);
-        bool addUnitig(const std::string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer/*, const bool enable_abundant = true*/);
+        //bool addUnitig(const std::string& str_unitig, const size_t id_unitig, SpinLock& lck_unitig, SpinLock& lck_kmer/*, const bool enable_abundant = true*/);
         void swapUnitigs(const bool isShort, const size_t id_a, const size_t id_b);
 
         bool mergeUnitig(const std::string& seq, const bool verbose = false);
@@ -772,7 +837,8 @@ class CompactedDBG {
         void createJoinHT(std::vector<Kmer>* v_joins, KmerHashTable<char>& joins, const size_t nb_threads) const;
 
         bool checkJoin(const Kmer& a, const const_UnitigMap<U, G>& cm_a, Kmer& b) const;
-        void check_fp_tips(KmerHashTable<bool>& ignored_km_tips);
+        //void check_fp_tips(KmerHashTable<uint16_t>& ignored_km_tips, const size_t nb_threads = 1);
+        void check_fp_tips(BlockedBloomFilter& bf, const size_t nb_threads = 1);
         size_t removeUnitigs(bool rmIsolated, bool clipTips, std::vector<Kmer>& v);
 
         size_t joinTips(std::string filename_MBBF_uniq_kmers, const size_t nb_threads = 1, const bool verbose = false);
@@ -792,8 +858,8 @@ class CompactedDBG {
         template<bool is_void>
         typename std::enable_if<is_void, void>::type writeGFA_sequence_(GFA_Parser& graph, KmerHashTable<size_t>& idmap) const;
 
-        void mapRead(const const_UnitigMap<U, G>& um);
-        void mapRead(const const_UnitigMap<U, G>& um, LockGraph& lck_g);
+        bool mapRead(const const_UnitigMap<U, G>& um);
+        bool mapRead(const const_UnitigMap<U, G>& um, LockGraph& lck_g);
 
         void unmapRead(const const_UnitigMap<U, G>& um);
         void unmapRead(const const_UnitigMap<U, G>& um, LockGraph& lck_g);

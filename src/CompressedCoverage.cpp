@@ -43,7 +43,8 @@ CompressedCoverage::CompressedCoverage(const CompressedCoverage& o) {
 CompressedCoverage::CompressedCoverage(CompressedCoverage&& o){
 
     asBits = o.asBits;
-    o.asBits = o.isFull() ? fullMask : tagMask;
+    //o.asBits = o.isFull() ? fullMask : tagMask;
+    o.asBits = tagMask;
 }
 
 CompressedCoverage& CompressedCoverage::operator=(const CompressedCoverage& o){
@@ -72,7 +73,8 @@ CompressedCoverage& CompressedCoverage::operator=(CompressedCoverage&& o){
         releasePointer();
 
         asBits = o.asBits;
-        o.asBits = o.isFull() ? fullMask : tagMask;
+        //o.asBits = o.isFull() ? fullMask : tagMask;
+        o.asBits = tagMask;
     }
 
     return *this;
@@ -145,21 +147,21 @@ size_t CompressedCoverage::size() const {
 
 // use:  s = cc.toString();
 // post: s contains all important information about cc
-string CompressedCoverage::toString() const {
+std::string CompressedCoverage::toString() const {
 
     bool isPtr = ((asBits & tagMask) == 0);
     size_t sz = size();
     bool full = isFull();
     uintptr_t one(1);
 
-    string bits(64, '0');
+    std::string bits(64, '0');
 
     for (int i = 0; i < 64; i++) {
 
         if (asBits & (one << (63-i))) bits[i] = '1';
     }
 
-    ostringstream info;
+    std::ostringstream info;
 
     if (isPtr) {
 
@@ -169,14 +171,14 @@ string CompressedCoverage::toString() const {
 
             info << "Full, size = ";
             info << sz;
-            info << endl;
+            info << std::endl;
         }
         else {
 
             const uint32_t filled = *(getConst32Pointer() + 1);
 
             info << "Non-full, size = " << sz << ", not-filled = ";
-            info << filled << endl;
+            info << filled << std::endl;
             info << "[";
 
             for (int i = 0; i < sz; i++) {
@@ -186,7 +188,7 @@ string CompressedCoverage::toString() const {
                 info << (int)covAt(i);
             }
 
-            info << "] " << endl;
+            info << "] " << std::endl;
         }
     }
     else {
@@ -197,7 +199,7 @@ string CompressedCoverage::toString() const {
 
         info <<" size = " << sz;
 
-        info << endl <<  "[";
+        info << std::endl <<  "[";
 
         for (int i = 0; i < sz; i++) {
 
@@ -206,7 +208,7 @@ string CompressedCoverage::toString() const {
             info << (int)covAt(i);
         }
 
-        info << "] " << endl;
+        info << "] " << std::endl;
     }
 
     return bits + "\n" + info.str();
@@ -217,13 +219,11 @@ string CompressedCoverage::toString() const {
 // pre:  0 <= start , end < cc.size()
 // post: the coverage of kmers: start,...,end (or reverse)
 //       has been increased by one
-void CompressedCoverage::cover(size_t start, size_t end) {
+bool CompressedCoverage::cover(size_t start, size_t end) {
 
     if (end < start) std::swap(start, end);
 
-    assert(end < size());
-
-    if (isFull()) return;
+    if (isFull()) return true;
     else if ((asBits & tagMask) == tagMask) { // local array
 
         uintptr_t s = 0x3;
@@ -242,7 +242,12 @@ void CompressedCoverage::cover(size_t start, size_t end) {
             asBits = (asBits & ~s) | val_tmp;
         }
 
-        if (isFull()) asBits = fullMask | (size() << 32);
+        if (isFull()) {
+
+            asBits = fullMask | (size() << 32);
+
+            return true;
+        }
     }
     else {
 
@@ -268,8 +273,16 @@ void CompressedCoverage::cover(size_t start, size_t end) {
 
         // Decrease filledcounter
         if (filled > 0) *(get32Pointer() + 1) -= filled;
-        if (isFull()) releasePointer();
+
+        if (isFull()) {
+
+            releasePointer();
+
+            return true;
+        }
     }
+
+    return false;
 }
 
 void CompressedCoverage::uncover(size_t start, size_t end) {
@@ -347,7 +360,7 @@ uint8_t CompressedCoverage::covAt(const size_t index) const {
 // pre:
 // post: low is the number of kmers under coverage limtis
 //       sum is the sum of these low coverages
-pair<size_t, size_t> CompressedCoverage::lowCoverageInfo() const {
+std::pair<size_t, size_t> CompressedCoverage::lowCoverageInfo() const {
 
     if (isFull()) return {0, 0};
 
@@ -364,7 +377,7 @@ pair<size_t, size_t> CompressedCoverage::lowCoverageInfo() const {
         sum += (cov < cov_full) * cov;
     }
 
-    return {low, sum};
+    return std::make_pair(low, sum);
 }
 
 
@@ -375,12 +388,12 @@ pair<size_t, size_t> CompressedCoverage::lowCoverageInfo() const {
 //         and bi < bj if i < j
 //       these pairs are all the fully covered subintervals of the corresponding contig
 //       i.e. [ai,...,bi-1] is fully covered
-vector<pair<int, int>> CompressedCoverage::splittingVector() const {
+std::vector<std::pair<int, int>> CompressedCoverage::splittingVector() const {
 
     size_t a = 0, b = 0;
     const size_t sz = size();
 
-    vector<pair<int, int>> v;
+    std::vector<std::pair<int, int>> v;
 
     while (b != sz) {
         // [a,...,b-1] is a fully covered subinterval and (a,b) has been added to v

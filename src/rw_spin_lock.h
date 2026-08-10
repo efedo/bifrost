@@ -40,7 +40,7 @@
                 if (++retry > RETRY_THRESHOLD){
 
                     retry = 0;
-                    std::this_thread::yield();
+                    this_thread::yield();
                 }
                 //#if defined(__SSE2__)
                 //else _mm_pause();
@@ -105,7 +105,7 @@ class SpinLock {
                     if (_bits.compare_exchange_weak(prev_bits, new_bits)) return;
                 }
 
-                if (++retry > RETRY_THRESHOLD) std::this_thread::yield();
+                if (++retry > RETRY_THRESHOLD) this_thread::yield();
             }
         }
 
@@ -125,7 +125,7 @@ class SpinLock {
                 if (((prev_bits & MASK_READER) == 0) && _bits.compare_exchange_weak(prev_bits, HAS_WRITER)) return;
                 if ((prev_bits & HAS_WRITER_WAITING) == 0) _bits.fetch_or(HAS_WRITER_WAITING);
 
-                if (++retry > RETRY_THRESHOLD) std::this_thread::yield();
+                if (++retry > RETRY_THRESHOLD) this_thread::yield();
             }
         }
 
@@ -349,7 +349,7 @@ class Hybrid_SpinLockRW_MCS {
             else {
 
                 std::cerr << "Hybrid_SpinLockRW_MCS(): Number of threads required is greater than number of threads possible on this machine (" <<
-                std::thread::hardware_concurrency() << ")" << std::endl;
+                    std::thread::hardware_concurrency() << ")" << std::endl;
             }
         }
 

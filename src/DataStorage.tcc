@@ -856,7 +856,7 @@ bool DataStorage<U>::read(const std::string& color_fn, const size_t nb_threads, 
 
         std::vector<int> seglist;
 
-        while(getline(ss_bfg_version, segment, '.')) seglist.push_back(atoi(segment.c_str()));
+        while(std::getline(ss_bfg_version, segment, '.')) seglist.push_back(atoi(segment.c_str()));
 
         const size_t len_bfg_v = seglist.size();
 
@@ -1149,7 +1149,7 @@ inline bool DataStorage<void>::read(const std::string& color_fn, const size_t nb
 
         std::vector<int> seglist;
 
-        while(getline(ss_bfg_version, segment, '.')) seglist.push_back(atoi(segment.c_str()));
+        while(std::getline(ss_bfg_version, segment, '.')) seglist.push_back(atoi(segment.c_str()));
 
         const size_t len_bfg_v = seglist.size();
 
@@ -1196,7 +1196,7 @@ inline bool DataStorage<void>::read(const std::string& color_fn, const size_t nb
         for (size_t i = 0; (i < nb_colors) && colors_in.good(); ++i){
             //Read the hash function seeds of the graph
             color_names.push_back(std::string());
-            getline(colors_in, color_names[i]);
+            std::getline(colors_in, color_names[i]);
         }
 
         for (uint64_t i = 0, e; (i != sz_unitig_cs_link) && colors_in.good(); ++i){
@@ -1231,7 +1231,7 @@ inline bool DataStorage<void>::read(const std::string& color_fn, const size_t nb
         for (size_t i = 0; (i < nb_colors) && colors_in.good(); ++i){
             //Read the hash function seeds of the graph
             color_names.push_back(std::string());
-            getline(colors_in, color_names[i]);
+            std::getline(colors_in, color_names[i]);
         }
 
         for (uint64_t i = 0, e; (i != sz_unitig_cs_link) && colors_in.good(); ++i){

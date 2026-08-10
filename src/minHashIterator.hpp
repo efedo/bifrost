@@ -9,8 +9,6 @@
 
 #include "Kmer.hpp"
 
-//using namespace std;
-
 struct minHashResult {
 
 	minHashResult() : hash((uint64_t) -1),pos(-1) {}

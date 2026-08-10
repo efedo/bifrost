@@ -33,7 +33,9 @@ struct CCDBG_Build_opt : CDBG_Build_opt {
 
     bool outputColors;
 
-    CCDBG_Build_opt() : outputColors(true) {}
+    size_t min_nb_colors_search; // Minimum number of colors from each query that must occur in the graph. 0 = parameter must not be used.
+
+    CCDBG_Build_opt() : outputColors(true), min_nb_colors_search(0) {}
 };
 
 template<typename U = void> using UnitigColorMap = UnitigMap<DataAccessor<U>, DataStorage<U>>;
@@ -197,13 +199,13 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         ColoredCDBG& operator=(ColoredCDBG&& o);
 
         /** Equality operator.
-        * @return a boolean indicating if two compacted de Bruijn graphs have the same colored unitigs (does not
+        * @return a boolean indicating whether two compacted de Bruijn graphs have the same colored unitigs (does not
         * compare the data associated with the unitigs).
         */
         bool operator==(const ColoredCDBG& o) const;
 
         /** Inequality operator.
-        * @return a boolean indicating if two compacted de Bruijn graphs have different colored unitigs (does not
+        * @return a boolean indicating whether two compacted de Bruijn graphs have different colored unitigs (does not
         * compare the data associated with the unitigs).
         */
         inline bool operator!=(const ColoredCDBG& o) const;
@@ -229,14 +231,14 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         /** Build the Colored and compacted de Bruijn graph (only the unitigs).
         * A call to ColoredCDBG::mapColors is required afterwards to map colors to unitigs.
         * @param opt is a structure from which the members are parameters of this function. See CCDBG_Build_opt.
-        * @return boolean indicating if the graph has been built successfully.
+        * @return boolean indicating whether the graph has been built successfully.
         */
         bool buildGraph(const CCDBG_Build_opt& opt);
 
         /** Map the colors to the unitigs. This is done by reading the input files and querying the graph.
         * If a color filename is provided in opt.filename_colors_in, colors are loaded from that file instead.
         * @param opt is a structure from which the members are parameters of this function. See CCDBG_Build_opt.
-        * @return boolean indicating if the colors have been mapped successfully.
+        * @return boolean indicating whether the colors have been mapped successfully.
         */
         bool buildColors(const CCDBG_Build_opt& opt);
 
@@ -248,11 +250,11 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * @param write_meta_file indicates if a graph meta file is written to disk. Graph meta files enable faster graph loading.
         * @param compressed_output indicates if the output file is compressed.
         * @param verbose is a boolean indicating if information message are printed during writing (true) or not (false).
-        * @return a boolean indicating if the graph was successfully written.
+        * @return a boolean indicating whether the graph was successfully written.
         */
         bool write(const std::string& prefix_output_fn, const size_t nb_threads = 1, const bool write_index_file = true, const bool compress_output = false, const bool verbose = false) const;
 
-        /** Read a colored and compacted de Bruijn graph from disk. The graph (in GFA, FASTA or BFG format) must 
+        /** Load a colored and compacted de Bruijn graph from disk. The graph (in GFA, FASTA or BFG format) must 
         * have been produced by Bifrost. By default, the function detects if an index file (BFI format) exists for the
         * input graph and will use it to load the graph. Otherwise, reading the graph will be much slower
         * than function read() with the index filename in input parameter.
@@ -260,20 +262,39 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * @param input_colors_fn is a string which is the prefix of the color filename to read
         * @param nb_threads is the number of threads that can be used to read the graph and its colors from disk.
         * @param verbose is a boolean indicating if information messages are printed during reading (true) or not (false).
-        * @return a boolean indicating if the graph was successfully read.
+        * @return a boolean indicating whether the graph was successfully read.
         */
         bool read(const std::string& input_graph_fn, const std::string& input_colors_fn, const size_t nb_threads = 1, const bool verbose = false);
 
-        /** Read a colored and compacted de Bruijn graph from disk using an index file. The graph (in GFA, FASTA or BFG format)
-        * must have been produced by Bifrost. 
+        /** Load a colored and compacted de Bruijn graph from disk using an index file.
+        * The graph (in GFA, FASTA or BFG format) must have been produced by Bifrost. 
         * @param input_graph_fn is a string which is the prefix of the graph filename to read
         * @param input_index_fn is a string which is the prefix of the index filename to read
         * @param input_colors_fn is a string which is the prefix of the color filename to read
         * @param nb_threads is the number of threads that can be used to read the graph and its colors from disk.
         * @param verbose is a boolean indicating if information messages are printed during reading (true) or not (false).
-        * @return a boolean indicating if the graph was successfully read.
+        * @return a boolean indicating whether the graph was successfully read.
         */
         bool read(const std::string& input_graph_fn, const std::string& input_index_fn, const std::string& input_colors_fn, const size_t nb_threads = 1, const bool verbose = false);
+
+        /** Load a colored and compacted de Bruijn graph without its colors from disk.
+        * A call to ColoredCDBG::mapColors is required afterwards to map colors to unitigs.
+        * @param input_graph_fn is a string which is the prefix of the graph filename to read
+        * @param nb_threads is the number of threads that can be used to read the graph and its colors from disk.
+        * @param verbose is a boolean indicating if information messages are printed during reading (true) or not (false).
+        * @return a boolean indicating whether the graph was successfully read.
+        */
+        bool readGraph(const std::string& input_graph_fn, const size_t nb_threads = 1, const bool verbose = false);
+
+        /** Load a colored and compacted de Bruijn graph without its colors from disk using an index file.
+        * A call to ColoredCDBG::mapColors is required afterwards to map colors to unitigs.
+        * @param input_graph_fn is a string which is the prefix of the graph filename to read
+        * @param input_index_fn is a string which is the prefix of the index filename to read
+        * @param nb_threads is the number of threads that can be used to read the graph and its colors from disk.
+        * @param verbose is a boolean indicating if information messages are printed during reading (true) or not (false).
+        * @return a boolean indicating whether the graph was successfully read.
+        */
+        bool readGraph(const std::string& input_graph_fn, const std::string& input_index_fn, const size_t nb_threads = 1, const bool verbose = false);
 
         /** Merge a colored and compacted de Bruijn graph.
         * After merging, all unitigs and colors of the input graph have been added to and compacted with the current
@@ -285,7 +306,7 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * @param o is a constant reference to the colored and compacted de Bruijn graph to merge.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
         * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graph has been successfully merged.
+        * @return a boolean indicating whether the graph has been successfully merged.
         */
         bool merge(const ColoredCDBG& o, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -301,7 +322,7 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * std::move(). After merging, the graph pointed by o is cleared.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
         * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graph has been successfully merged.
+        * @return a boolean indicating whether the graph has been successfully merged.
         */
         bool merge(ColoredCDBG&& o, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -313,7 +334,7 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * @param v is a constant reference to a vector of colored and compacted de Bruijn graphs to merge.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
         * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graphs have been successfully merged.
+        * @return a boolean indicating whether the graphs have been successfully merged.
         */
         bool merge(const std::vector<ColoredCDBG>& v, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -327,7 +348,7 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         * obtained using std::move(). After merging, the graphs in v are cleared.
         * @param nb_threads is an integer indicating how many threads can be used during the merging.
         * @param verbose is a boolean indicating if information messages must be printed during the execution of the function.
-        * @return a boolean indicating if the graphs have been successfully merged.
+        * @return a boolean indicating whether the graphs have been successfully merged.
         */
         bool merge(std::vector<ColoredCDBG>&& v, const size_t nb_threads = 1, const bool verbose = false);
 
@@ -346,13 +367,139 @@ class ColoredCDBG : public CompactedDBG<DataAccessor<Unitig_data_t>, DataStorage
         /** Get the number of colors in the graph.
         * @return the number of colors in the graph.
         */
-        inline size_t getNbColors() const { return this->getData()->getNbColors(); }
+        inline size_t getNbColors() const {
 
+            return this->getData()->getNbColors();
+        }
+
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers, and write the results
+        * to disk in TSV format. Output is a binary matrix (|queries|,|colors|) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out_filename_prefix is the prefix of the output filename to which results are written.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file constitute one query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
+                                const double min_ratio_kmers,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers having a minimum number
+        * of colors, and write the results to disk in TSV format. Output is a binary matrix (|queries|,1) with row names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out_filename_prefix is the prefix of the output filename to which results are written.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param min_nb_colors is the minimum number of colors shared by found k-mers in each query to report that query as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
+                                const double min_ratio_kmers, const size_t min_nb_colors,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records and write the number of found k-mers per color to disk
+        * in TSV format. Output is a uint or float matrix (|queries|,|colors|) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out_filename_prefix is the prefix of the output filename to which results are written.
+        * @param found_km_ratio_out is a boolean indicating to output the ratio of found k-mers from each query rather than
+        * the number of found k-mers.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
         bool search(const std::vector<std::string>& query_filenames, const std::string& out_filename_prefix,
-                    const double ratio_kmers, const bool inexact_search, const size_t nb_threads,
-                    const bool verbose = false) const;
+                    const bool found_km_ratio_out = false, const bool inexact_search = false,
+                    const bool files_as_queries = false, const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers, and write the results
+        * to an opened output stream. Output is a binary matrix (|queries|,|colors|) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out is an output stream to which results are written. It must be opened prior to this function call and
+        * it is not closed by this function.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out, const double ratio_kmers,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records, requiring a minimum ratio of k-mers present in a minimum number
+        * of colors, and write the results to an opened output stream. Output is a binary matrix (|queries|,1) with row names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out is an output stream to which results are written. It must be opened prior to this function call and
+        * it is not closed by this function.
+        * @param min_ratio_kmers is the minimum ratio of found k-mers (0 < ratio_kmers <= 1) in each query to report the query
+        * as present.
+        * @param min_nb_colors is the minimum number of colors shared by found k-mers in each query to report that query as present.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool searchMinRatioKmer(const std::vector<std::string>& query_filenames, std::ostream& out,
+                                const double min_ratio_kmers, const size_t min_nb_colors,
+                                const bool inexact_search = false, const bool files_as_queries = false,
+                                const size_t nb_threads = 1, const bool verbose = false) const;
+
+        /**
+        * Query the graph for input file(s) records and write the number of found k-mers per color to an opened output
+        * stream. Output is a uint/float matrix (|queries|,|colors|) with row and column names.
+        * @param query_filenames is a vector of input query files. Each file can be in FASTA or FASTQ format. Each record
+        * in each file is a query by default unless parameter "files_as_queries" is true.
+        * @param out is an opened output stream to which results are written. It must be opened prior to this function call and
+        * it is not closed by this function.
+        * @param found_km_ratio_out is a boolean indicating to output the ratio of found k-mers from each query rather than
+        * the number of found k-mers.
+        * @param inexact_search is a boolean indicating to search for k-mers containing up to one mismatch or indel with respect
+        * to the query k-mers and count as a hit any such inexact k-mer found in the graph.
+        * @param files_as_queries is a boolean indicating whether all records from each input query file are one single query.
+        * @param nb_threads is an integer indicating how many threads can be used during the querying.
+        * @param verbose is a boolean indicating whether information messages must be printed during the execution of the function.
+        * @return Boolean indicating whether the querying completed successfully.
+        */
+        bool search(const std::vector<std::string>& query_filenames, std::ostream& out,
+                    const bool found_km_ratio_out = false, const bool inexact_search = false,
+                    const bool files_as_queries = false, const size_t nb_threads = 1, const bool verbose = false) const;
 
     private:
+
+        bool searchMinRatioKmer_(   const std::vector<std::string>& query_filenames, std::ostream& out,
+                                    const double ratio_kmers, const size_t min_nb_colors,
+                                    const bool inexact_search, const bool files_as_queries,
+                                    const size_t nb_threads, const bool verbose) const;
 
         void checkColors(const std::vector<std::string>& filename_seq_in) const;
         bool loadColors(const std::string& input_graph_fn, const std::string& input_colors_fn, const size_t nb_threads, const bool verbose);

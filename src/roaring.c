@@ -1,5 +1,10 @@
 #include "roaring.h"
 
+#if defined(_MSC_VER) && defined(_M_X64)
+#include <intrin.h>
+#pragma intrinsic(_umul128)
+#endif
+
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -9681,11 +9686,19 @@ roaring_bitmap_t *roaring_bitmap_subsample(const roaring_bitmap_t *x, const uint
         // from https://github.com/lemire/testingRNG/blob/master/source/wyhash.h
         // because just calling rand() is so f****** slow
         uint64_t l_seed = seed + UINT64_C(0x60bee2bee120fc15);
+#if defined(_MSC_VER) && defined(_M_X64)
+        uint64_t high;
+        uint64_t low = _umul128(l_seed, UINT64_C(0xa3b195354a39b70d), &high);
+        uint64_t m1 = high ^ low;
+        low = _umul128(m1, UINT64_C(0x1b03738712fad5c9), &high);
+        uint64_t m2 = high ^ low;
+#else
         __uint128_t tmp;
         tmp = (__uint128_t)l_seed * UINT64_C(0xa3b195354a39b70d);
         uint64_t m1 = (tmp >> 64) ^ tmp;
         tmp = (__uint128_t)m1 * UINT64_C(0x1b03738712fad5c9);
         uint64_t m2 = (tmp >> 64) ^ tmp;
+#endif
 
         roaring_bitmap_add(sampled_pos, (uint32_t)(m2 % card));
     }
