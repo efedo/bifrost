@@ -9,6 +9,9 @@
 #include "Kmer.hpp"
 #include "Lock.hpp"
 #include "TinyVector.hpp"
+#include "BooPHF.h"
+
+typedef boomphf::mphf<Minimizer, MinimizerHash> boophf_t;
 
 class MinimizerIndex {
 
@@ -126,7 +129,17 @@ class MinimizerIndex {
             return (pop == 0);
         }
 
+        // Generates an MPHF for all the minimizers
+        // gamma=1. yields lowest bit/elem ratio. Higher values yield faster
+        // construction and query times. gamma=2. is a good trade-off
+        void generate_mphf(std::vector<Minimizer>& minimizers, uint32_t threads=1, float gamma=2.0);
+        void register_mphf(boophf_t* mphf_);
+
+        void to_static(uint32_t threads=1, float gamma=1.0);
+        void drop_table_keys();
+
         void clear();
+        void clearPTV();
 
         iterator find(const Minimizer& key);
         const_iterator find(const Minimizer& key) const;
@@ -137,7 +150,7 @@ class MinimizerIndex {
         iterator erase(const_iterator it);
         size_t erase(const Minimizer& minz);
 
-        pair<iterator, bool> insert(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
+        std::pair<iterator, bool> insert(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
 
         void init_threads();
         void release_threads();
@@ -153,13 +166,17 @@ class MinimizerIndex {
 
         size_t erase_p(const Minimizer& minz);
 
-        pair<iterator, bool> insert_p(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
+        std::pair<iterator, bool> insert_p(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag);
+
+        std::pair<iterator, bool> add_unitig_p(const Minimizer& key, const size_t pos_id_unitig); // only if static
 
         iterator begin();
         const_iterator begin() const;
 
         iterator end();
         const_iterator end() const;
+
+        bool is_static;
 
     private:
 
@@ -173,10 +190,12 @@ class MinimizerIndex {
         packed_tiny_vector* table_tinyv;
         uint8_t* table_tinyv_sz;
 
-        mutable vector<SpinLock> lck_min;
+        boophf_t* mphf;
+
+        mutable std::vector<SpinLock> lck_min;
         mutable SpinLockRW lck_edit_table;
 
-        atomic<size_t> pop_p, num_empty_p;
+        std::atomic<size_t> pop_p, num_empty_p;
 
         // For future myself: lck_block_sz must be a poswer of 2. If you change it, change lck_block_div_shift accordingly.
         // For future myself, this could automated in a much better looking implementation. 

@@ -1,4 +1,16 @@
 #include "TinyBitmap.hpp"
+#include <random>
+
+
+#ifdef _WIN64
+#define posix_memalign(ptr, alignment, size) (*(ptr) = _aligned_malloc(size, alignment), (*(ptr) ? 0 : errno))
+#define posix_memalign_free(ptr) _aligned_free(ptr)
+#elif   defined(__MINGW32__) || defined(__MINGW64__)
+#define posix_memalign(ptr, alignment, size) (*(ptr) = __mingw_aligned_malloc(size, alignment), (*(ptr) ? 0 : errno))
+#define posix_memalign_free(ptr) __mingw_aligned_free(ptr)
+#endif
+
+
 
 TinyBitmap::TinyBitmap() : tiny_bmp(nullptr) {}
 
@@ -12,7 +24,7 @@ TinyBitmap::TinyBitmap(const TinyBitmap& o) : tiny_bmp(nullptr) {
 
         if (aligned_alloc != 0){
 
-            cerr << "TinyBitmap::TinyBitmap(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+            std::cerr << "TinyBitmap::TinyBitmap(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
             exit(1);
         }
 
@@ -45,7 +57,7 @@ TinyBitmap& TinyBitmap::operator=(const TinyBitmap& o) {
 
             if (aligned_alloc != 0){
 
-                cerr << "TinyBitmap::operator=(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+                std::cerr << "TinyBitmap::operator=(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
                 exit(1);
             }
 
@@ -101,7 +113,7 @@ bool TinyBitmap::add(const uint32_t val){
 
         if (aligned_alloc != 0){
 
-            cerr << "TinyBitmap::add(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+            std::cerr << "TinyBitmap::add(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
             exit(1);
         }
 
@@ -704,7 +716,7 @@ size_t TinyBitmap::runOptimize() {
 
                     if (aligned_alloc != 0){
 
-                        cerr << "TinyBitmap::runOptimize(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+                        std::cerr << "TinyBitmap::runOptimize(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
                         exit(1);
                     }
 
@@ -759,7 +771,7 @@ size_t TinyBitmap::runOptimize() {
 
                     if (aligned_alloc != 0){
 
-                        cerr << "TinyBitmap::runOptimize(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+                        std::cerr << "TinyBitmap::runOptimize(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
                         exit(1);
                     }
 
@@ -808,7 +820,7 @@ size_t TinyBitmap::shrinkSize() {
 
     if (aligned_alloc != 0){
 
-        cerr << "TinyBitmap::shrinkSize(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+        std::cerr << "TinyBitmap::shrinkSize(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
         exit(1);
     }
 
@@ -822,7 +834,7 @@ size_t TinyBitmap::shrinkSize() {
     return sz - new_sz;
 }
 
-bool TinyBitmap::write(ostream& stream_out) const {
+bool TinyBitmap::write(std::ostream& stream_out) const {
 
     uint16_t header;
 
@@ -848,7 +860,7 @@ bool TinyBitmap::write(ostream& stream_out) const {
     return !ret;
 }
 
-bool TinyBitmap::read(istream& stream_in) {
+bool TinyBitmap::read(std::istream& stream_in) {
 
     clear();
 
@@ -866,7 +878,7 @@ bool TinyBitmap::read(istream& stream_in) {
 
             if (aligned_alloc != 0){
 
-                cerr << "TinyBitmap::read(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+                std::cerr << "TinyBitmap::read(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
                 exit(1);
             }
 
@@ -887,19 +899,19 @@ void TinyBitmap::print() const {
     const uint16_t mode = getMode();
     const uint16_t cardinality = getCardinality();
 
-    cout << "sz = " << sz << endl;
-    cout << "mode = " << mode << endl;
-    cout << "cardinality = " << cardinality << endl;
+    std::cout << "sz = " << sz << std::endl;
+    std::cout << "mode = " << mode << std::endl;
+    std::cout << "cardinality = " << cardinality << std::endl;
 
     if (mode == bmp_mode){
 
         const uint32_t max_value = maximum() & 0xFFFF;
 
-        for (size_t i = 3; i < (max_value >> 4) + 4; ++i) cout << "tiny_bmp[" << i << "] = " << tiny_bmp[i] << endl;
+        for (size_t i = 3; i < (max_value >> 4) + 4; ++i) std::cout << "tiny_bmp[" << i << "] = " << tiny_bmp[i] << std::endl;
     }
     else {
 
-        for (size_t i = 3; i < cardinality + 3; ++i) cout << "tiny_bmp[" << i << "] = " << tiny_bmp[i] << endl;
+        for (size_t i = 3; i < cardinality + 3; ++i) std::cout << "tiny_bmp[" << i << "] = " << tiny_bmp[i] << std::endl;
     }
 }
 
@@ -920,7 +932,7 @@ bool TinyBitmap::change_sz(const uint16_t sz_min) {
 
         if (aligned_alloc != 0){
 
-            cerr << "TinyBitmap::change_sz(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+            std::cerr << "TinyBitmap::change_sz(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
             exit(1);
         }
 
@@ -938,7 +950,7 @@ bool TinyBitmap::change_sz(const uint16_t sz_min) {
 
         if (aligned_alloc != 0){
 
-            cerr << "TinyBitmap::change_sz(): Aligned memory could not be allocated with error " << aligned_alloc << endl;
+            std::cerr << "TinyBitmap::change_sz(): Aligned memory could not be allocated with error " << aligned_alloc << std::endl;
             exit(1);
         }
 
@@ -1073,7 +1085,7 @@ bool TinyBitmap::test(const bool verbose) {
 
         if ((t_bmp.tiny_bmp != nullptr) && (t_bmp.getMode() != bmp_mode) && (t_bmp.getCardinality() + 3 > t_bmp.getSize())){
 
-            cout << "TinyBitmap::test(): cardinality (" << t_bmp.getCardinality() << ") + 3 > sz (" << t_bmp.getSize() << ")" << endl;
+            std::cout << "TinyBitmap::test(): cardinality (" << t_bmp.getCardinality() << ") + 3 > sz (" << t_bmp.getSize() << ")" << std::endl;
             t_bmp.print();
             exit(1);
         }
@@ -1087,7 +1099,7 @@ bool TinyBitmap::test(const bool verbose) {
 
                 if (t_bmp.tiny_bmp[i] < t_bmp.tiny_bmp[i-1]){
 
-                    cout << "TinyBitmap::test(): Not sorted " << endl;
+                    std::cout << "TinyBitmap::test(): Not sorted " << std::endl;
 
                     t_bmp.print();
                     exit(1);
@@ -1098,13 +1110,13 @@ bool TinyBitmap::test(const bool verbose) {
 
     const size_t nb_rounds = 10;
 
-    if (verbose) cout << "TinyBitmap::test(): Adding values in sequential order from 0 to 65536-49" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Adding values in sequential order from 0 to 65536-49" << std::endl;
 
     for (uint32_t i = 0; i != 65536-48; ++i){
 
         if (t_bmp.add(i) != t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while adding values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while adding values" << std::endl;
             return false;
         }
 
@@ -1112,11 +1124,11 @@ bool TinyBitmap::test(const bool verbose) {
         check_sorting();
     }
 
-    if (verbose) cout << "TinyBitmap::test(): Iterating over the values" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Iterating over the values" << std::endl;
 
     for (const auto val : t_bmp) {}
 
-    if (verbose) cout << "TinyBitmap::test(): Deleting values in sequential order from 0 to 65536-49" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Deleting values in sequential order from 0 to 65536-49" << std::endl;
 
     for (uint32_t i = 0; i != 65536-48; ++i){
 
@@ -1127,18 +1139,19 @@ bool TinyBitmap::test(const bool verbose) {
 
         if (t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while removing values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while removing values" << std::endl;
             return false;
         }
     }
 
     t_bmp.clear();
+    std::mt19937 g(44);
 
     for (size_t j = 0; j < nb_rounds; ++j){
 
-        if (verbose) cout << "TinyBitmap::test(): Adding values in random order from 0 to 65536-49 (round " << j << ")" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Adding values in random order from 0 to 65536-49 (round " << j << ")" << std::endl;
 
-        vector<uint32_t> val_added;
+        std::vector<uint32_t> val_added;
 
         for (uint32_t i = 0; i != 65536 - 48; ++i){
 
@@ -1148,7 +1161,7 @@ bool TinyBitmap::test(const bool verbose) {
 
             if (t_bmp.add(val) != t_bmp.contains(val)){
 
-                if (verbose) cerr << "TinyBitmap::test(): Error while adding values" << endl;
+                if (verbose) std::cerr << "TinyBitmap::test(): Error while adding values" << std::endl;
                 return false;
             }
 
@@ -1156,13 +1169,13 @@ bool TinyBitmap::test(const bool verbose) {
             check_sorting();
         }
 
-        if (verbose) cout << "TinyBitmap::test(): Iterating over the values" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Iterating over the values" << std::endl;
 
         for (const auto val : t_bmp) {}
 
-        if (verbose) cout << "TinyBitmap::test(): Removing values in random order from 0 to 65536-49 (round " << j << ")" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Removing values in random order from 0 to 65536-49 (round " << j << ")" << std::endl;
 
-        std::random_shuffle(val_added.begin(), val_added.end());
+        std::shuffle(val_added.begin(), val_added.end(), g);
 
         for (const auto val : val_added){
 
@@ -1173,7 +1186,7 @@ bool TinyBitmap::test(const bool verbose) {
 
             if (t_bmp.contains(val)){
 
-                if (verbose) cerr << "TinyBitmap::test(): Error while removing values" << endl;
+                if (verbose) std::cerr << "TinyBitmap::test(): Error while removing values" << std::endl;
                 return false;
             }
         }
@@ -1181,13 +1194,13 @@ bool TinyBitmap::test(const bool verbose) {
         t_bmp.clear();
     }
 
-    if (verbose) cout << "TinyBitmap::test(): Adding values in sequential order from 65536 to 65536 + 4096 - 3" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Adding values in sequential order from 65536 to 65536 + 4096 - 3" << std::endl;
 
     for (uint32_t i = 65536; i != 65536 + 4096 - 3; ++i){
 
         if (t_bmp.add(i) != t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while adding values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while adding values" << std::endl;
             return false;
         }
 
@@ -1195,11 +1208,11 @@ bool TinyBitmap::test(const bool verbose) {
         check_sorting();
     }
 
-    if (verbose) cout << "TinyBitmap::test(): Iterating over the values" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Iterating over the values" << std::endl;
 
     for (const auto val : t_bmp) {}
 
-    if (verbose) cout << "TinyBitmap::test(): Removing values in sequential order from 65536 to 65536 + 4096 - 3" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Removing values in sequential order from 65536 to 65536 + 4096 - 3" << std::endl;
 
     for (uint32_t i = 65536; i != 65536 + 4096 - 3; ++i){
 
@@ -1210,20 +1223,20 @@ bool TinyBitmap::test(const bool verbose) {
 
         if (t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while removing values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while removing values" << std::endl;
             return false;
         }
     }
 
     t_bmp.clear();
 
-    if (verbose) cout << "TinyBitmap::test(): Adding values in reverse sequential order from 65536 + 4096 - 4 to 65536" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Adding values in reverse sequential order from 65536 + 4096 - 4 to 65536" << std::endl;
 
     for (uint32_t i = 65536 + 4096 - 4; i >= 65536; --i){
 
         if (t_bmp.add(i) != t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while adding values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while adding values" << std::endl;
             return false;
         }
 
@@ -1231,11 +1244,11 @@ bool TinyBitmap::test(const bool verbose) {
         check_sorting();
     }
 
-    if (verbose) cout << "TinyBitmap::test(): Iterating over the values" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Iterating over the values" << std::endl;
 
     for (const auto val : t_bmp) {}
 
-    if (verbose) cout << "TinyBitmap::test(): Removing values in reverse sequential order from 65536 + 4096 - 4 to 65536" << endl;
+    if (verbose) std::cout << "TinyBitmap::test(): Removing values in reverse sequential order from 65536 + 4096 - 4 to 65536" << std::endl;
 
     for (uint32_t i = 65536 + 4096 - 4; i >= 65536; --i){
 
@@ -1246,7 +1259,7 @@ bool TinyBitmap::test(const bool verbose) {
 
         if (t_bmp.contains(i)){
 
-            if (verbose) cerr << "TinyBitmap::test(): Error while removing values" << endl;
+            if (verbose) std::cerr << "TinyBitmap::test(): Error while removing values" << std::endl;
             return false;
         }
     }
@@ -1255,9 +1268,9 @@ bool TinyBitmap::test(const bool verbose) {
 
     for (size_t j = 0; j < nb_rounds; ++j){
 
-        if (verbose) cout << "TinyBitmap::test(): Adding values in random order (round " << j << ")" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Adding values in random order (round " << j << ")" << std::endl;
 
-        vector<uint32_t> val_added;
+        std::vector<uint32_t> val_added;
 
         for (uint32_t i = 0; i != 4093; ++i){
 
@@ -1267,7 +1280,7 @@ bool TinyBitmap::test(const bool verbose) {
 
             if (t_bmp.add(val) != t_bmp.contains(val)){
 
-                if (verbose) cerr << "TinyBitmap::test(): Error while adding values" << endl;
+                if (verbose) std::cerr << "TinyBitmap::test(): Error while adding values" << std::endl;
                 return false;
             }
 
@@ -1275,13 +1288,13 @@ bool TinyBitmap::test(const bool verbose) {
             check_sorting();
         }
 
-        if (verbose) cout << "TinyBitmap::test(): Iterating over the values" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Iterating over the values" << std::endl;
 
         for (const auto val : t_bmp) {}
 
-        if (verbose) cout << "TinyBitmap::test(): Removing values in random order (round " << j << ")" << endl;
+        if (verbose) std::cout << "TinyBitmap::test(): Removing values in random order (round " << j << ")" << std::endl;
 
-        std::random_shuffle(val_added.begin(), val_added.end());
+        std::shuffle(val_added.begin(), val_added.end(), g);
 
         for (const auto val : val_added){
 
@@ -1292,7 +1305,7 @@ bool TinyBitmap::test(const bool verbose) {
 
             if (t_bmp.contains(val)){
 
-                if (verbose) cerr << "TinyBitmap::test(): Error while removing values" << endl;
+                if (verbose) std::cerr << "TinyBitmap::test(): Error while removing values" << std::endl;
                 return false;
             }
         }

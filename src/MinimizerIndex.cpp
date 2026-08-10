@@ -1,13 +1,15 @@
 #include "MinimizerIndex.hpp"
 
-MinimizerIndex::MinimizerIndex() :  table_keys(nullptr), table_tinyv(nullptr), table_tinyv_sz(nullptr),
-                                    size_(0), pop(0), num_empty(0)  {
 
-    init_tables(max(static_cast<size_t>(1024), lck_block_sz));
+
+MinimizerIndex::MinimizerIndex() :  table_keys(nullptr), table_tinyv(nullptr), table_tinyv_sz(nullptr),
+                                    mphf(nullptr), is_static(false), size_(0), pop(0), num_empty(0)  {
+
+    init_tables(std::max(static_cast<size_t>(1024), lck_block_sz));
 }
 
 MinimizerIndex::MinimizerIndex(const size_t sz) :   table_keys(nullptr), table_tinyv(nullptr), table_tinyv_sz(nullptr),
-                                                    size_(0), pop(0), num_empty(0) {
+                                                    mphf(nullptr), is_static(false), size_(0), pop(0), num_empty(0) {
 
     if (sz == 0) init_tables(lck_block_sz);
     else {
@@ -18,7 +20,7 @@ MinimizerIndex::MinimizerIndex(const size_t sz) :   table_keys(nullptr), table_t
 
         while (rdnup_sz < sz_with_empty) rdnup_sz <<= 1;
 
-        init_tables(max(rdnup_sz, lck_block_sz));
+        init_tables(std::max(rdnup_sz, lck_block_sz));
     }
 }
 
@@ -28,7 +30,10 @@ MinimizerIndex::MinimizerIndex(const MinimizerIndex& o) :   size_(o.size_), pop(
     table_tinyv = new packed_tiny_vector[size_];
     table_tinyv_sz = new uint8_t[size_];
 
-    lck_min = vector<SpinLock>(o.lck_min.size());
+    lck_min = std::vector<SpinLock>(o.lck_min.size());
+
+    mphf = new boophf_t(*o.mphf);
+    is_static = o.is_static;
 
     std::copy(o.table_keys, o.table_keys + size_, table_keys);
 
@@ -49,7 +54,12 @@ MinimizerIndex::MinimizerIndex(MinimizerIndex&& o){
     table_tinyv = o.table_tinyv;
     table_tinyv_sz = o.table_tinyv_sz;
 
-    lck_min = vector<SpinLock>(o.lck_min.size());
+    lck_min =std::vector<SpinLock>(o.lck_min.size());
+
+    mphf = o.mphf;
+    is_static = o.is_static;
+    o.mphf = nullptr;
+    o.is_static = false;
 
     o.table_keys = nullptr;
     o.table_tinyv = nullptr;
@@ -72,7 +82,10 @@ MinimizerIndex& MinimizerIndex::operator=(const MinimizerIndex& o) {
         table_tinyv = new packed_tiny_vector[size_];
         table_tinyv_sz = new uint8_t[size_];
 
-        lck_min = vector<SpinLock>(o.lck_min.size());
+        lck_min =std::vector<SpinLock>(o.lck_min.size());
+
+        mphf = new boophf_t(*o.mphf);
+        is_static = o.is_static;
 
         std::copy(o.table_keys, o.table_keys + size_, table_keys);
 
@@ -100,7 +113,12 @@ MinimizerIndex& MinimizerIndex::operator=(MinimizerIndex&& o){
         table_tinyv = o.table_tinyv;
         table_tinyv_sz = o.table_tinyv_sz;
 
-        lck_min = vector<SpinLock>(o.lck_min.size());
+        lck_min =std::vector<SpinLock>(o.lck_min.size());
+
+        mphf = o.mphf;
+        is_static = o.is_static;
+        o.mphf = nullptr;
+        o.is_static = false;
 
         o.table_keys = nullptr;
         o.table_tinyv = nullptr;
@@ -117,11 +135,185 @@ MinimizerIndex::~MinimizerIndex() {
     clear();
 }
 
+void MinimizerIndex::generate_mphf(std::vector<Minimizer>& minimizers, uint32_t threads, float gamma) {
+
+    if (pop > 0 || is_static) {
+        std::cerr << "Attempting to create a static minimizer index from a non-empty index." << std::endl;
+        exit(1);
+    }
+
+
+    mphf = new boophf_t(minimizers.size(), minimizers, threads, gamma, true, false);
+    is_static = true;
+
+
+    clear_tables();
+    size_ = minimizers.size();
+    minimizers.clear();
+
+
+    Minimizer empty_key;
+
+    table_keys = new Minimizer[size_];
+    table_tinyv = new packed_tiny_vector[size_];
+    table_tinyv_sz = new uint8_t[size_];
+
+
+    empty_key.set_empty();
+
+    memset(table_tinyv_sz, packed_tiny_vector::FLAG_EMPTY, size_ * sizeof(uint8_t));
+
+    for (size_t i = 0; i < size_; ++i) {
+        table_tinyv[i].copy(table_tinyv_sz[i], packed_tiny_vector(), 0);
+    }
+
+    for (const auto& minz : minimizers) {
+
+        uint64_t h = mphf->lookup(minz);
+
+        table_keys[h] = minz;
+        table_tinyv[h].copy(table_tinyv_sz[h], packed_tiny_vector(), 0);
+    }
+
+    pop = size_;
+    num_empty = 0;
+    is_static = true;
+}
+
+void MinimizerIndex::register_mphf(boophf_t* mphf_) {
+
+    if (pop > 0 || is_static) {
+        std::cerr << "Attempting to create a static minimizer index from a non-empty index." << std::endl;
+        exit(1);
+    }
+
+
+    mphf = mphf_;
+    is_static = true;
+
+
+    clear_tables();
+    size_ = mphf->nbKeys();
+
+    Minimizer empty_key;
+
+    table_keys = new Minimizer[size_];
+    table_tinyv = new packed_tiny_vector[size_];
+    table_tinyv_sz = new uint8_t[size_];
+
+    empty_key.set_empty();
+
+    std::fill(table_keys, table_keys + size_, empty_key);
+
+    memset(table_tinyv_sz, packed_tiny_vector::FLAG_EMPTY, size_ * sizeof(uint8_t));
+
+    // memset(table_tinyv_sz, packed_tiny_vector::FLAG_EMPTY, size_ * sizeof(uint8_t));
+    //
+    // for (size_t i = 0; i < size_; ++i) {
+    //     table_tinyv[i].copy(table_tinyv_sz[i], packed_tiny_vector(), 0);
+    // }
+    //
+    // for (const auto& minz : minimizers) {
+    //
+    //     uint64_t h = mphf->lookup(minz);
+    //
+    //     table_keys[h] = minz;
+    //     table_tinyv[h].copy(table_tinyv_sz[h], packed_tiny_vector(), 0);
+    // }
+
+    pop = size_;
+    num_empty = 0;
+    is_static = true;
+}
+
+void MinimizerIndex::to_static(uint32_t threads, float gamma) {
+
+    std::cout << "MinimizerIndex::to_static" << std::endl;
+    std::vector<Minimizer> minz;
+    size_t n_elems = size_ - num_empty;
+    minz.reserve(n_elems);
+    for (size_t i = 0; i < size_; ++i) {
+        if (!table_keys[i].isEmpty()) minz.push_back(table_keys[i].rep());
+    }
+
+    std::cout << "Size of arrays before shrinking to size: " << size_ << std::endl;
+    assert(minz.size() == n_elems);
+
+    if (mphf != nullptr) {
+        delete mphf;
+    }
+    mphf = new boophf_t(n_elems, minz, threads, gamma, true, false);
+    minz.clear();
+
+    Minimizer tmp_min;
+    packed_tiny_vector tmp_ptv;
+    uint8_t tmp_sz;
+
+    std::cout << "Starting for-loop" << std::endl;
+    for (size_t i = 0; i < size_; ++i) {
+
+        if (table_keys[i].isEmpty()) {
+            continue;
+        }
+
+        uint64_t h = mphf->lookup(table_keys[i]);
+
+        while (i != h && table_keys[i] != table_keys[h]) {
+            std::cout << "--- i: " << table_keys[i].toString() << ", h: " << table_keys[h].toString() << std::endl;
+            bool flag = table_keys[h].isEmpty();
+            tmp_min = table_keys[h];
+            tmp_ptv = table_tinyv[h];
+            tmp_sz  = table_tinyv_sz[h];
+
+            table_keys[h] = table_keys[i];
+            table_tinyv[h] = table_tinyv[i];
+            table_tinyv_sz[h] = table_tinyv_sz[i];
+
+            if (flag) {
+                break;
+            }
+
+            table_keys[i] = tmp_min;
+            table_tinyv[i] = tmp_ptv;
+            table_tinyv_sz[i] = tmp_sz;
+
+            h = mphf->lookup(table_keys[i]);
+        }
+    }
+    std::cout << "After populating new tables" << std::endl;
+
+    Minimizer* tmp_keys = new Minimizer[n_elems];
+    std::copy(table_keys, table_keys+n_elems, tmp_keys);
+    delete[] table_keys;
+    table_keys = tmp_keys;
+
+    packed_tiny_vector* tmp_tinyv = new packed_tiny_vector[n_elems];
+    std::copy(table_tinyv, table_tinyv+n_elems, tmp_tinyv);
+    delete[] table_tinyv;
+    table_tinyv = tmp_tinyv;
+
+    uint8_t* tmp_tinyv_sz = new uint8_t[n_elems];
+    std::copy(table_tinyv_sz, table_tinyv_sz+n_elems, tmp_tinyv_sz);
+    delete[] table_tinyv_sz;
+    table_tinyv_sz = tmp_tinyv_sz;
+
+    size_ = n_elems;
+    pop = n_elems;
+    num_empty = 0;
+    is_static = true;
+    std::cout << "Size of arrays after shrinking to size: " << size_ << std::endl;
+}
+
 void MinimizerIndex::clear() {
 
     if (table_tinyv != nullptr){
 
         for (size_t i = 0; i < size_; ++i) table_tinyv[i].destruct(table_tinyv_sz[i]);
+    }
+
+    if (mphf != nullptr) {
+        delete mphf;
+        mphf = nullptr;
     }
 
     clear_tables();
@@ -130,43 +322,77 @@ void MinimizerIndex::clear() {
     lck_edit_table.release_all();
 }
 
-MinimizerIndex::iterator MinimizerIndex::find(const Minimizer& key) {
+void MinimizerIndex::clearPTV() {
 
-    const size_t end_table = size_-1;
+    if (table_tinyv != nullptr){
 
-    size_t h = key.hash() & end_table;
-    size_t i = 0;
-
-    while (i != size_) {
-
-        if (table_keys[h].isEmpty() || (table_keys[h] == key)) break;
-
-        h = (h+1) & end_table;
-        ++i;
+        for (size_t i = 0; i < size_; ++i) table_tinyv[i].destruct(table_tinyv_sz[i]);
     }
 
-    if ((i != size_) && (table_keys[h] == key)) return iterator(this, h);
+    if (table_tinyv != nullptr) {
 
+        delete[] table_tinyv;
+        table_tinyv = nullptr;
+    }
+
+    if (table_tinyv_sz != nullptr) {
+
+        delete[] table_tinyv_sz;
+        table_tinyv_sz = nullptr;
+    }
+}
+
+MinimizerIndex::iterator MinimizerIndex::find(const Minimizer& key) {
+
+    if (!is_static) {
+        // Dynamic MinimizerIndex
+        const size_t end_table = size_-1;
+
+        size_t h = key.hash() & end_table;
+        size_t i = 0;
+
+        while (i != size_) {
+
+            if (table_keys[h].isEmpty() || (table_keys[h] == key)) break;
+
+            h = (h+1) & end_table;
+            ++i;
+        }
+
+        if ((i != size_) && (table_keys[h] == key)) return iterator(this, h);
+
+    } else {
+        // Static MinimizerIndex
+        uint64_t h = mphf->lookup(key);
+        if ((h < size_) && (table_keys[h] == key)) return iterator(this, h);
+    }
     return iterator(this);
 }
 
 MinimizerIndex::const_iterator MinimizerIndex::find(const Minimizer& key) const {
 
-    const size_t end_table = size_-1;
+    if (!is_static) {
+        // Dynamic MinimizerIndex
+        const size_t end_table = size_-1;
 
-    size_t h = key.hash() & end_table;
-    size_t i = 0;
+        size_t h = key.hash() & end_table;
+        size_t i = 0;
 
-    while (i != size_) {
+        while (i != size_) {
 
-        if (table_keys[h].isEmpty() || (table_keys[h] == key)) break;
+            if (table_keys[h].isEmpty() || (table_keys[h] == key)) break;
 
-        h = (h+1) & end_table;
-        ++i;
+            h = (h+1) & end_table;
+            ++i;
+        }
+
+        if ((i != size_) && (table_keys[h] == key)) return const_iterator(this, h);
+
+    } else {
+        // Static MinimizerIndex
+        uint64_t h = mphf->lookup(key);
+        if ((h < size_) && (table_keys[h] == key)) return const_iterator(this, h);
     }
-
-    if ((i != size_) && (table_keys[h] == key)) return const_iterator(this, h);
-
     return const_iterator(this);
 }
 
@@ -186,6 +412,11 @@ MinimizerIndex::const_iterator MinimizerIndex::find(const size_t h) const {
 
 MinimizerIndex::iterator MinimizerIndex::erase(const_iterator it) {
 
+    if (is_static) {
+        std::cerr << "Illegal operation on Static MinimizerIndex: MinimizerIndex::erase" << std::endl;
+        exit(1);
+    }
+
     if (it == end()) return end();
 
     table_keys[it.h].set_deleted();
@@ -198,6 +429,11 @@ MinimizerIndex::iterator MinimizerIndex::erase(const_iterator it) {
 }
 
 size_t MinimizerIndex::erase(const Minimizer& minz) {
+
+    if (is_static) {
+        std::cerr << "Illegal operation on Static MinimizerIndex: MinimizerIndex::erase" << std::endl;
+        exit(1);
+    }
 
     const size_t end_table = size_-1;
     const size_t oldpop = pop;
@@ -225,46 +461,66 @@ size_t MinimizerIndex::erase(const Minimizer& minz) {
     return oldpop - pop;
 }
 
-pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert(const Minimizer& key, const packed_tiny_vector& ptv, const uint8_t& flag) {
+std::pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert(const Minimizer& key, const packed_tiny_vector& ptv, const uint8_t& flag) {
 
-    if ((5 * num_empty) < size_) reserve(2 * size_); // if more than 80% full, resize
+    if (!is_static) {
+        // Dynamic MinimizerIndex
+        if ((5 * num_empty) < size_) reserve(2 * size_); // if more than 80% full, resize
 
-    const size_t end_table = size_-1;
-    
-    size_t h = key.hash() & end_table, h_del;
+        const size_t end_table = size_-1;
 
-    bool is_deleted = false;
+        size_t h = key.hash() & end_table, h_del;
 
-    while (true) {
+        bool is_deleted = false;
 
+        while (true) {
+
+            if (table_keys[h].isEmpty()) {
+
+                h = ((static_cast<size_t>(is_deleted) - 1) & h) + ((static_cast<size_t>(!is_deleted) - 1) & h_del);
+                num_empty -= static_cast<size_t>(!is_deleted);
+
+                table_keys[h] = key;
+                table_tinyv_sz[h] = packed_tiny_vector::FLAG_EMPTY;
+
+                table_tinyv[h].copy(table_tinyv_sz[h], ptv, flag);
+
+                ++pop;
+
+                return {iterator(this, h), true};
+            }
+            else if (table_keys[h] == key) return {iterator(this, h), false};
+            else if (table_keys[h].isDeleted()) {
+
+                h_del = ((static_cast<size_t>(!is_deleted) - 1) & h_del) + ((static_cast<size_t>(is_deleted) - 1) & h);
+                is_deleted = true;
+            }
+
+            h = (h+1) & end_table;
+        }
+    } else {
+        // Static MinimizerIndex
+        uint64_t h = mphf->lookup(key);
+        if (h >= size_) {
+        }
         if (table_keys[h].isEmpty()) {
-
-            h = ((static_cast<size_t>(is_deleted) - 1) & h) + ((static_cast<size_t>(!is_deleted) - 1) & h_del);
-            num_empty -= static_cast<size_t>(!is_deleted);
 
             table_keys[h] = key;
             table_tinyv_sz[h] = packed_tiny_vector::FLAG_EMPTY;
 
             table_tinyv[h].copy(table_tinyv_sz[h], ptv, flag);
 
-            ++pop;
-
             return {iterator(this, h), true};
-        }
-        else if (table_keys[h] == key) return {iterator(this, h), false};
-        else if (table_keys[h].isDeleted()) {
-
-            h_del = ((static_cast<size_t>(!is_deleted) - 1) & h_del) + ((static_cast<size_t>(is_deleted) - 1) & h);
-            is_deleted = true;
+        } else if (table_keys[h] == key) {
+            return {iterator(this, h), false};
         }
 
-        h = (h+1) & end_table;
     }
 }
 
 void MinimizerIndex::init_threads() {
 
-    lck_min = vector<SpinLock>((size_ + lck_block_sz - 1) / lck_block_sz);
+    lck_min =std::vector<SpinLock>((size_ + lck_block_sz - 1) / lck_block_sz);
 
     pop_p = pop;
     num_empty_p = num_empty;
@@ -286,7 +542,13 @@ MinimizerIndex::iterator MinimizerIndex::find_p(const Minimizer& key) {
     const size_t end_table = size_-1;
 
     size_t i = 0;
-    size_t h = key.hash() & end_table;
+    size_t h;
+    if (!is_static) {
+        h = key.hash() & end_table;
+    } else {
+        h = mphf->lookup(key);
+    }
+
     size_t id_block = h >> lck_block_div_shift;
 
     lck_min[id_block].acquire();
@@ -326,7 +588,12 @@ MinimizerIndex::const_iterator MinimizerIndex::find_p(const Minimizer& key) cons
     const size_t end_table = size_-1;
 
     size_t i = 0;
-    size_t h = key.hash() & end_table;
+    size_t h;
+    if (!is_static) {
+        h = key.hash() & end_table;
+    } else {
+        h = mphf->lookup(key);
+    }
     size_t id_block = h >> lck_block_div_shift;
 
     lck_min[id_block].acquire();
@@ -419,6 +686,11 @@ void MinimizerIndex::release_p(iterator it) {
 
 size_t MinimizerIndex::erase_p(const Minimizer& minz) {
 
+    if (is_static) {
+        std::cerr << "Illegal operation on Static MinimizerIndex: MinimizerIndex::erase_p" << std::endl;
+        exit(1);
+    }
+
     lck_edit_table.acquire_reader();
 
     const size_t end_table = size_ - 1;
@@ -470,27 +742,30 @@ size_t MinimizerIndex::erase_p(const Minimizer& minz) {
     return l_pop;
 }
 
-pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert_p(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag) {
+std::pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert_p(const Minimizer& key, const packed_tiny_vector& v, const uint8_t& flag) {
 
     bool is_deleted = false;
 
     lck_edit_table.acquire_reader();
 
-    if ((5 * num_empty_p) < size_){
-
-        lck_edit_table.release_reader();
-        lck_edit_table.acquire_writer();
-
-        reserve(2 * size_); // if more than 80% full, resize
-
-        pop_p = pop;
-        num_empty_p = num_empty;
-
-        lck_edit_table.release_writer_acquire_reader();
-    }
-
     const size_t end_table = size_-1;
-    const size_t h = key.hash() & end_table;
+    size_t h = key.hash() & end_table;
+    if (!is_static) {
+        if ((5 * num_empty_p) < size_){
+
+            lck_edit_table.release_reader();
+            lck_edit_table.acquire_writer();
+
+            reserve(2 * size_); // if more than 80% full, resize
+
+            pop_p = pop;
+            num_empty_p = num_empty;
+
+            lck_edit_table.release_writer_acquire_reader();
+        }
+    } else {
+        h = mphf->lookup(key);
+    }
 
     size_t id_block = h >> lck_block_div_shift;
 
@@ -558,6 +833,45 @@ pair<MinimizerIndex::iterator, bool> MinimizerIndex::insert_p(const Minimizer& k
     lck_min[id_block].release(); // Just for safety
     lck_edit_table.release_reader(); // Just for safety
 }
+
+std::pair<MinimizerIndex::iterator, bool> MinimizerIndex::add_unitig_p(const Minimizer& key, const size_t pos_id_unitig) {
+    if (!is_static) {
+        std::cerr << "Illegal operation on non-static MinimizerIndex: MinimizerIndex::add_unitig_p" << std::endl;
+        exit(1);
+    }
+    size_t h = mphf->lookup(key);
+    size_t id_block = h >> lck_block_div_shift;
+  
+    lck_min[id_block].acquire();
+
+    if (table_keys[h].isEmpty()) {
+    
+        table_keys[h] = key;
+        table_tinyv_sz[h] = packed_tiny_vector::FLAG_EMPTY;
+        table_tinyv[h].copy(table_tinyv_sz[h], packed_tiny_vector(), 0);
+    
+        iterator i = iterator(this, h);
+        packed_tiny_vector& v = i.getVector();
+        uint8_t& flag_v = i.getVectorSize();
+        flag_v = v.push_back(pos_id_unitig, flag_v);
+        lck_min[id_block].release();
+        return {iterator(this, h), true};
+    } else if (table_keys[h] == key){
+
+        iterator i = iterator(this, h);
+        packed_tiny_vector& v = i.getVector();
+        uint8_t& flag_v = i.getVectorSize();
+        flag_v = v.push_back(pos_id_unitig, flag_v);
+        lck_min[id_block].release();
+        return {iterator(this, h), false};
+    } else if (table_keys[h].isDeleted()) {
+        std::cerr << "Illegal operation: MinimizerIndex::add_unitig_p cannot be used if a key is deleted" << std::endl;
+        exit(1);
+    }
+  
+    lck_min[id_block].release(); // Just for safety
+}
+
 
 MinimizerIndex::iterator MinimizerIndex::begin() {
 
@@ -631,7 +945,7 @@ void MinimizerIndex::init_tables(const size_t sz) {
 
 void MinimizerIndex::reserve(const size_t sz) {
 
-    if (sz <= size_) return;
+    if (is_static || sz <= size_) return;
 
     const size_t old_size_ = size_;
 
@@ -651,7 +965,7 @@ void MinimizerIndex::reserve(const size_t sz) {
 
     empty_key.set_empty();
 
-    if (!lck_min.empty()) lck_min = vector<SpinLock>((size_ + lck_block_sz - 1) / lck_block_sz);
+    if (!lck_min.empty()) lck_min =std::vector<SpinLock>((size_ + lck_block_sz - 1) / lck_block_sz);
 
     std::fill(table_keys, table_keys + size_, empty_key);
 
@@ -801,7 +1115,7 @@ CompactedMinimizerIndex::CompactedMinimizerIndex(const MinimizerIndex& mi, const
             {
                 bool stop = false;
 
-                vector<thread> workers; // need to keep track of threads so we can join them
+               std::vector<thread> workers; // need to keep track of threads so we can join them
 
                 mutex mutex_mi;
 
