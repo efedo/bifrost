@@ -1,5 +1,7 @@
 # Bifrost
 
+> **Port note:** This fork is an MSVC-compatible port of the [Bifrost library](https://github.com/pmelsted/bifrost).
+
 ### Parallel construction, indexing and querying of colored and compacted de Bruijn graphs
 
 * **Build**, **index**, **color** and **query** the compacted de Bruijn graph
